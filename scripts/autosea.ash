@@ -61,14 +61,16 @@ void as_run()
 	as_printStatus();
 }
 
-void main(string args)
+// "string..." so KoLmafia doesn't prompt for arguments when run from the Scripts menu
+void main(string... args)
 {
+	string command = count(args) > 0 ? args[0].to_lower_case() : "";
 	if(my_level() < 11)
 	{
 		as_warn("The Old Man only talks to you from level 11.");
 		return;
 	}
-	if(args.to_lower_case() == "status")
+	if(command == "status")
 	{
 		as_printStatus();
 		return;
