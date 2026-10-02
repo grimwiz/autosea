@@ -142,7 +142,8 @@ boolean as_recover()
 // ---------------------------------------------------------------- adventuring
 
 // one adventure in a sea zone. Returns false (and says why) if it could not adventure.
-boolean as_adv(location loc, string extraMaximize)
+// filter: name of a combat filter function, or "" to leave combat entirely to your own combat settings.
+boolean as_adv(location loc, string extraMaximize, string filter)
 {
 	if(!as_haveAdventures())
 	{
@@ -160,10 +161,15 @@ boolean as_adv(location loc, string extraMaximize)
 		return false;
 	}
 	as_debug("adventuring at " + loc);
-	return adv1(loc, -1, "");
+	return adv1(loc, -1, filter);
+}
+
+boolean as_adv(location loc, string extraMaximize)
+{
+	return as_adv(loc, extraMaximize, "");
 }
 
 boolean as_adv(location loc)
 {
-	return as_adv(loc, "");
+	return as_adv(loc, "", "");
 }

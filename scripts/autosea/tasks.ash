@@ -153,19 +153,24 @@ void as_applyBoosts(string expr)
 }
 
 // one adventure in a sea zone, with Fishy and the right gear
-boolean as_seaAdv(location loc, string extraMaximize)
+boolean as_seaAdv(location loc, string extraMaximize, string filter)
 {
 	as_ensureFishy();
 	if(extraMaximize.contains_text("combat"))
 	{
 		as_applyBoosts("-combat");
 	}
-	return as_adv(loc, extraMaximize);
+	return as_adv(loc, extraMaximize, filter);
+}
+
+boolean as_seaAdv(location loc, string extraMaximize)
+{
+	return as_seaAdv(loc, extraMaximize, "");
 }
 
 boolean as_seaAdv(location loc)
 {
-	return as_seaAdv(loc, "");
+	return as_seaAdv(loc, "", "");
 }
 
 string NC_HUNT = "-25combat";
@@ -382,10 +387,49 @@ boolean as_grandma()
 	return as_seaAdv($location[The Mer-Kin Outpost], NC_HUNT);
 }
 
+// ---------------------------------------------------------------- the Abyss and the legendary seal-clubbing club
+// A school of many is 20 monsters with 20,000 HP between them. The club's skills deal with it:
+//   Club 'Em Back in Time:          free kill (no adventure used, no drops), 5 a day
+//   Club 'Em Across the Battlefield: insta-kill (uses the turn, keeps drops), 5 a day
+// Both count as won fights, so Mom's progress goes up as usual. Club 'Em Into Next Week is never used here:
+// it would bring the school back as a wandering monster.
+
+boolean as_haveClub()
+{
+	return available_amount($item[legendary seal-clubbing club]) > 0;
+}
+
+int as_clubKillsLeft()
+{
+	return max(0, 5 - get_property("_clubEmTimeUsed").to_int()) + max(0, 5 - get_property("_clubEmBattlefieldUsed").to_int());
+}
+
+// combat filter for adv1: club the school of many, leave every other fight to your own combat settings
+string as_abyssFilter(int round, monster enemy, string text)
+{
+	if(enemy != $monster[school of many] || !have_equipped($item[legendary seal-clubbing club]))
+	{
+		return "";
+	}
+	if(get_property("_clubEmTimeUsed").to_int() < 5)
+	{
+		return "skill Club 'Em Back in Time";
+	}
+	if(get_property("_clubEmBattlefieldUsed").to_int() < 5)
+	{
+		return "skill Club 'Em Across the Battlefield";
+	}
+	return "";
+}
+
 // optional Abyss speed-ups: each adds 1 progress per won fight (40 fights without, 10 with all three)
 string as_momGear()
 {
 	string gear = "+equip black glass";
+	if(as_haveClub())
+	{
+		gear += ", +equip legendary seal-clubbing club";
+	}
 	if(available_amount($item[scale-mail underwear]) > 0 || as_acquire(1, $item[scale-mail underwear]))
 	{
 		gear += ", +equip scale-mail underwear";
@@ -425,8 +469,15 @@ boolean as_mom()
 	{
 		use(1, $item[comb jelly]);
 	}
+	//with the club, pace the Abyss over several days: stop once today's club kills are spent,
+	//rather than meet a school of many without them
+	if(as_haveClub() && as_setting("abyssPace", "true").to_boolean() && as_clubKillsLeft() == 0)
+	{
+		as_info("Out of club kills for today. Mom is at " + get_property("momSeaMonkeeProgress") + "/40; run autosea again tomorrow.");
+		return false;
+	}
 	as_info("Fighting through the Caliginous Abyss for Mom (" + get_property("momSeaMonkeeProgress") + "/40).");
-	return as_seaAdv($location[The Caliginous Abyss], as_momGear());
+	return as_seaAdv($location[The Caliginous Abyss], as_momGear(), "as_abyssFilter");
 }
 
 // ---------------------------------------------------------------- engine hooks

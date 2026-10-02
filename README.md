@@ -37,12 +37,23 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_fishyMaxPrice` | 1000 | Most it will pay for a sea jelly (1 spleen, 10 turns of Fishy) |
 | `autosea_useSpleen` | `true` | Chew sea jelly for Fishy |
 | `autosea_skatePark` / `autosea_sushiMat` / `autosea_helmet` | `true` | Do these optional steps |
+| `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
 
 ## Fishy
 
 Every sea adventure costs 2 turns unless you have the Fishy effect. Before each adventure autosea tries, in order: Lutz at the Skate Park (30 turns a day, once the roller skates are driven out), the fishy pipe (10 turns a day), then a sea jelly. Buying the sand dollars it needs (about 125, roughly 37,000 meat at current prices) avoids hours of farming.
 
+## The Abyss and the legendary seal-clubbing club
+
+The Caliginous Abyss sometimes throws a school of many at you: 20 monsters with 20,000 HP between them. If you own the legendary seal-clubbing club, autosea wields it in the Abyss and kills each school with the club's skills: first Club 'Em Back in Time (a free kill, 5 a day), then Club 'Em Across the Battlefield (an insta-kill, 5 a day). Both count towards Mom. Every other fight uses your own combat settings.
+
+Once both skills are used up, autosea stops for the day instead of risking a school without them, so Mom takes a few days. Set `autosea_abyssPace = false` to keep going anyway.
+
 ## Safety
 
 If a task claims to act three times in a row but neither your turn count nor your quest progress changes, autosea stops with a message instead of looping.
+
+## License
+
+[CC BY-NC-SA 4.0](LICENSE), the same as autoscend.
