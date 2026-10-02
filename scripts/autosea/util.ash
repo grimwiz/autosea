@@ -198,27 +198,43 @@ boolean as_recover()
 	return my_hp() > my_maxhp() * 0.5;
 }
 
-// warn once per zone when its monsters clearly outclass you
-boolean[location] as_warnedZones;
+// Refuse zones where you'd likely be beaten up: KoLmafia's estimate of each monster's damage per hit
+// (with your current gear and buffs) times a typical fight length, against your maximum HP.
+boolean[location] as_reportedZones;
 
-void as_checkZoneDanger(location loc)
+boolean as_zoneIsSafe(location loc)
 {
-	if(as_warnedZones contains loc)
+	if(as_setting("ignoreDanger", "false").to_boolean())
 	{
-		return;
+		return true;
 	}
-	as_warnedZones[loc] = true;
-	int strongest = 0;
-	foreach i, mon in get_monsters(loc)
+	int rounds = as_setting("dangerRounds", "4").to_int();
+	int worst = 0;
+	monster worstMonster = $monster[none];
+	foreach mon, rate in appearance_rates(loc)
 	{
-		strongest = max(strongest, monster_attack(mon));
+		if(rate <= 0 || mon == $monster[none])
+		{
+			continue;
+		}
+		int dmg = expected_damage(mon);
+		if(dmg > worst)
+		{
+			worst = dmg;
+			worstMonster = mon;
+		}
 	}
-	int moxie = my_buffedstat($stat[moxie]);
-	if(strongest > moxie + 100)
+	if(worst * rounds < my_maxhp() * 0.9)
 	{
-		as_warn("Monsters in " + loc + " attack at up to " + strongest + " against your " + moxie
-			+ " Moxie, so expect to be hit hard every round. More Moxie, HP or damage reduction will help.");
+		return true;
 	}
+	if(!(as_reportedZones contains loc))
+	{
+		as_reportedZones[loc] = true;
+		as_warn("Skipping " + loc + ": " + worstMonster + " can hit you for about " + worst + " a round, and you have "
+			+ my_maxhp() + " HP. More Moxie, HP or damage reduction will open it up. (set autosea_ignoreDanger = true to go anyway)");
+	}
+	return false;
 }
 
 // ---------------------------------------------------------------- adventuring
@@ -237,7 +253,10 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		as_warn("Can't breathe underwater (you or your familiar) for " + loc + ". Get a fishbowl, helmet or similar first.");
 		return false;
 	}
-	as_checkZoneDanger(loc);
+	if(!as_zoneIsSafe(loc))
+	{
+		return false;
+	}
 	if(!as_recover())
 	{
 		as_warn("Couldn't recover enough HP to adventure safely (" + my_hp() + "/" + my_maxhp() + ").");

@@ -117,6 +117,11 @@ boolean as_buyFromBigBrother(item it, int cost)
 	return buy($coinmaster[Big Brother], 1, it);
 }
 
+boolean as_sushiMatInstalled()
+{
+	return get_property("hasSushiMat").to_boolean() || (get_campground() contains $item[sushi-rolling mat]);
+}
+
 // ---------------------------------------------------------------- Fishy (halves the cost of sea adventures)
 
 void as_ensureFishy()
@@ -136,6 +141,18 @@ void as_ensureFishy()
 		use(1, $item[fishy pipe]);
 		if(as_isFishy()) return;
 		as_warn("Used the fishy pipe but didn't get Fishy.");
+	}
+	//sushi: 3 fullness of food you'd eat anyway, 7-12 adventures and 45 Fishy. Ingredients come from the mall
+	//(fish meat ~100, seaweed ~140, white rice ~1000), which is far cheaper than farming fish meat underwater.
+	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled() && fullness_limit() - my_fullness() >= 3)
+	{
+		if(as_acquire(1, $item[beefy fish meat]) && as_acquire(1, $item[white rice]) && as_acquire(1, $item[seaweed]))
+		{
+			as_info("Rolling and eating a beefy maki for Fishy.");
+			cli_execute("create 1 beefy maki");	//sushi is rolled and eaten in one step
+			if(as_isFishy()) return;
+			as_warn("Ate sushi but didn't get Fishy.");
+		}
 	}
 	//sea jelly: 1 spleen for 10 Fishy turns, usually ~100 meat
 	if(as_setting("useSpleen", "true").to_boolean() && spleen_limit() - my_spleen_use() >= 1)
@@ -290,10 +307,6 @@ boolean as_fishyPipe()
 	return true;
 }
 
-boolean as_sushiMatInstalled()
-{
-	return get_property("hasSushiMat").to_boolean() || (get_campground() contains $item[sushi-rolling mat]);
-}
 
 boolean as_sushiMatRefreshed = false;
 boolean as_sushiMatFailed = false;

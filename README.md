@@ -36,14 +36,17 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_buy` | `true` | Buy from the mall what saves turns: sand dollars for Big Brother's shop, the rusty diving helmet, a skate blade, sea jelly for Fishy, and the Mom speed-up gear |
 | `autosea_maxPrice` | 25000 | Most autosea will pay for any single item |
 | `autosea_fishyMaxPrice` | 1000 | Most it will pay for a sea jelly (1 spleen, 10 turns of Fishy) |
+| `autosea_eatSushi` | `true` | With the sushi-rolling mat installed and 3 fullness free, buy fish meat, white rice and seaweed (about 1,250 meat) and eat a beefy maki: 7–12 adventures and 45 turns of Fishy |
 | `autosea_useSpleen` | `true` | Chew sea jelly for Fishy |
+| `autosea_dangerRounds` | 4 | Skip a zone when its hardest monster's expected damage per round, times this many rounds, would take 90% of your maximum HP |
+| `autosea_ignoreDanger` | `false` | Enter zones even when that check says you'd likely be beaten up |
 | `autosea_skatePark` / `autosea_sushiMat` / `autosea_helmet` | `true` | Do these optional steps |
 | `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
 
 ## Fishy
 
-Every sea adventure costs 2 turns unless you have the Fishy effect. Before each adventure autosea tries, in order: Lutz at the Skate Park (30 turns a day, once the roller skates are driven out), the fishy pipe (10 turns a day), then a sea jelly. Buying the sand dollars it needs (about 125, roughly 37,000 meat at current prices) avoids hours of farming.
+Every sea adventure costs 2 turns unless you have the Fishy effect. Before each adventure autosea tries, in order: Lutz at the Skate Park (30 turns a day, once the roller skates are driven out), the fishy pipe (10 turns a day), sushi, then a sea jelly. Fish meat is cheaper to buy (about 100 meat) than to farm underwater. Buying the sand dollars it needs (about 125, roughly 37,000 meat at current prices) avoids hours of farming.
 
 ## The Abyss and the legendary seal-clubbing club
 
@@ -52,6 +55,9 @@ The Caliginous Abyss sometimes throws a school of many at you: 20 monsters with 
 Once both skills are used up, autosea stops for the day instead of risking a school without them, so Mom takes a few days. Set `autosea_abyssPace = false` to keep going anyway.
 
 ## Safety
+
+Before entering a zone autosea asks KoLmafia how hard each monster there would hit you with your current gear and buffs. If a typical fight could beat you up, it skips the zone and tells you why.
+
 
 If a task claims to act three times in a row but neither your turn count nor your quest progress changes, autosea stops with a message instead of looping.
 
