@@ -384,7 +384,10 @@ boolean as_skatePark()
 	}
 	string gear = available_amount($item[skate blade]) > 0 ? "+equip skate blade" : "";
 	as_info("Fighting the roller skates out of the Skate Park.");
-	boolean acted = as_seaAdv($location[The Skate Park], gear);
+	//the roller skates' noncombats only happen with the blade in the main weapon slot
+	as_mainWeapon = $item[skate blade];
+	boolean acted = as_seaAdv($location[The Skate Park], gear + (gear == "" ? "" : ", ") + NC_HUNT);
+	as_mainWeapon = $item[none];
 	visit_url("sea_skatepark.php");
 	return acted;
 }

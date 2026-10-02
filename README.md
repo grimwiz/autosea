@@ -30,7 +30,8 @@ Change these with `set autosea_<name> = <value>`.
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `autosea_advReserve` | 2 | Adventures to leave unspent (never less than 2, since sea adventures can cost 2) |
-| `autosea_maximize` | `mainstat` | Extra maximizer terms added after `sea` |
+| `autosea_maximize` | `mainstat, moxie, 0.5 hp, 3 dr` | Extra maximizer terms added after `sea`. Sea monsters hit hard, so the default values survival as well as your fighting stat |
+| `autosea_hpThreshold` | 0.9 | Heal to full before a fight when HP is below this fraction of maximum |
 | `autosea_keepRecoveryScript` | `false` | Keep your own `recoveryScript` during the run. By default autosea switches it off and uses KoLmafia's built-in recovery, then restores it when it finishes |
 | `autosea_buy` | `true` | Buy from the mall what saves turns: sand dollars for Big Brother's shop, the rusty diving helmet, a skate blade, sea jelly for Fishy, and the Mom speed-up gear |
 | `autosea_maxPrice` | 25000 | Most autosea will pay for any single item |

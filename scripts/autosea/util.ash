@@ -37,9 +37,13 @@ int as_advReserve()
 
 string as_maximizeExtra()
 {
-	//extra maximizer terms, e.g. "mainstat, 0.5 item". "sea" is always added.
-	return as_setting("maximize", "mainstat");
+	//extra maximizer terms. "sea" is always added. Sea monsters hit hard, so the default also values
+	//Moxie (dodging), HP and damage reduction, not just the stat you fight with.
+	return as_setting("maximize", "mainstat, moxie, 0.5 hp, 3 dr");
 }
+
+// an item that must sit in the main weapon slot (the skate blade does nothing in the off-hand)
+item as_mainWeapon = $item[none];
 
 // ---------------------------------------------------------------- preference save/restore
 // Like autoscend, take over a few global settings for the run and put them back afterwards.
@@ -163,6 +167,14 @@ boolean as_equipForSea(string extra)
 	}
 	as_debug("maximize " + expr);
 	maximize(expr, false);
+	if(as_mainWeapon != $item[none] && equipped_item($slot[weapon]) != as_mainWeapon && available_amount(as_mainWeapon) > 0)
+	{
+		if(equipped_item($slot[off-hand]) == as_mainWeapon)
+		{
+			equip($slot[off-hand], $item[none]);
+		}
+		equip($slot[weapon], as_mainWeapon);
+	}
 	if(as_canBreatheUnderwater() && !as_familiarCanBreatheUnderwater() && my_familiar() != $familiar[none])
 	{
 		as_warn("Your " + my_familiar() + " can't breathe underwater; adventuring without a familiar.");
@@ -173,15 +185,40 @@ boolean as_equipForSea(string extra)
 
 boolean as_recover()
 {
-	if(my_hp() < my_maxhp() * 0.6)
+	//sea monsters can take most of your HP in one fight, so start every fight close to full
+	float threshold = as_setting("hpThreshold", "0.9").to_float();
+	if(my_hp() < my_maxhp() * threshold)
 	{
-		restore_hp(ceil(my_maxhp() * 0.9));
+		restore_hp(my_maxhp());
 	}
 	if(my_mp() < 30 && my_maxmp() > 60)
 	{
 		restore_mp(min(my_maxmp(), 100));
 	}
-	return my_hp() > my_maxhp() * 0.3;
+	return my_hp() > my_maxhp() * 0.5;
+}
+
+// warn once per zone when its monsters clearly outclass you
+boolean[location] as_warnedZones;
+
+void as_checkZoneDanger(location loc)
+{
+	if(as_warnedZones contains loc)
+	{
+		return;
+	}
+	as_warnedZones[loc] = true;
+	int strongest = 0;
+	foreach i, mon in get_monsters(loc)
+	{
+		strongest = max(strongest, monster_attack(mon));
+	}
+	int moxie = my_buffedstat($stat[moxie]);
+	if(strongest > moxie + 100)
+	{
+		as_warn("Monsters in " + loc + " attack at up to " + strongest + " against your " + moxie
+			+ " Moxie, so expect to be hit hard every round. More Moxie, HP or damage reduction will help.");
+	}
 }
 
 // ---------------------------------------------------------------- adventuring
@@ -200,9 +237,10 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		as_warn("Can't breathe underwater (you or your familiar) for " + loc + ". Get a fishbowl, helmet or similar first.");
 		return false;
 	}
+	as_checkZoneDanger(loc);
 	if(!as_recover())
 	{
-		as_warn("Couldn't recover enough HP to adventure safely.");
+		as_warn("Couldn't recover enough HP to adventure safely (" + my_hp() + "/" + my_maxhp() + ").");
 		return false;
 	}
 	if(!can_adventure(loc))
