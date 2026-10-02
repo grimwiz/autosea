@@ -64,10 +64,24 @@ int as_maxPrice()
 	return as_setting("maxPrice", "25000").to_int();
 }
 
-// make sure we hold qty of it, buying from the mall if allowed. Returns true if we hold enough.
+// get qty of it into inventory without buying: from the closet, then from Hagnk's (when allowed)
+boolean as_fetch(int qty, item it)
+{
+	if(item_amount(it) < qty && closet_amount(it) > 0)
+	{
+		take_closet(min(qty - item_amount(it), closet_amount(it)), it);
+	}
+	if(item_amount(it) < qty && storage_amount(it) > 0 && can_interact())
+	{
+		take_storage(min(qty - item_amount(it), storage_amount(it)), it);
+	}
+	return item_amount(it) >= qty;
+}
+
+// make sure we hold qty of it: closet and storage first, then the mall if allowed. Returns true if we hold enough.
 boolean as_acquire(int qty, item it)
 {
-	if(item_amount(it) >= qty)
+	if(as_fetch(qty, it))
 	{
 		return true;
 	}
@@ -83,8 +97,13 @@ boolean as_acquire(int qty, item it)
 		return false;
 	}
 	as_info("Buying " + missing + " " + it + " (about " + price + " each).");
-	buy(missing, it, as_maxPrice());
-	return item_amount(it) >= qty;
+	int bought = buy(missing, it, as_maxPrice());
+	if(item_amount(it) < qty)
+	{
+		as_warn("Couldn't buy " + it + " (bought " + bought + "). Check the CLI for KoLmafia's reason.");
+		return false;
+	}
+	return true;
 }
 
 boolean as_buyFromBigBrother(item it, int cost)
@@ -112,17 +131,22 @@ void as_ensureFishy()
 		cli_execute("skate lutz");
 		if(as_isFishy()) return;
 	}
-	if(item_amount($item[fishy pipe]) > 0 && !get_property("_fishyPipeUsed").to_boolean())
+	if(!get_property("_fishyPipeUsed").to_boolean() && as_fetch(1, $item[fishy pipe]))
 	{
 		use(1, $item[fishy pipe]);
 		if(as_isFishy()) return;
+		as_warn("Used the fishy pipe but didn't get Fishy.");
 	}
 	//sea jelly: 1 spleen for 10 Fishy turns, usually ~100 meat
 	if(as_setting("useSpleen", "true").to_boolean() && spleen_limit() - my_spleen_use() >= 1)
 	{
-		if(item_amount($item[sea jelly]) > 0 || (mall_price($item[sea jelly]) <= as_setting("fishyMaxPrice", "1000").to_int() && as_acquire(1, $item[sea jelly])))
+		if(as_fetch(1, $item[sea jelly]) || (mall_price($item[sea jelly]) <= as_setting("fishyMaxPrice", "1000").to_int() && as_acquire(1, $item[sea jelly])))
 		{
 			chew(1, $item[sea jelly]);
+			if(!as_isFishy())
+			{
+				as_warn("Chewed a sea jelly but didn't get Fishy.");
+			}
 		}
 	}
 }
@@ -266,14 +290,24 @@ boolean as_fishyPipe()
 	return true;
 }
 
+boolean as_sushiMatInstalled()
+{
+	return get_property("hasSushiMat").to_boolean() || (get_campground() contains $item[sushi-rolling mat]);
+}
+
 boolean as_sushiMat()
 {
-	if(!as_wantSushiMat() || get_property("hasSushiMat").to_boolean() || !get_property("bigBrotherRescued").to_boolean())
+	if(!as_wantSushiMat() || as_sushiMatInstalled())
 	{
 		return false;
 	}
-	if(item_amount($item[sushi-rolling mat]) == 0)
+	//the Old Man hands back a mat you installed in an earlier ascension, so you may already hold one
+	if(!as_fetch(1, $item[sushi-rolling mat]))
 	{
+		if(!get_property("bigBrotherRescued").to_boolean())
+		{
+			return false;
+		}
 		return as_buyFromBigBrother($item[sushi-rolling mat], 50);
 	}
 	as_info("Installing the sushi-rolling mat.");
@@ -484,10 +518,10 @@ boolean as_mom()
 
 string[int] AS_TASKS;
 AS_TASKS[0] = "as_oldMan";
-AS_TASKS[1] = "as_littleBrother";
-AS_TASKS[2] = "as_bigBrother";
-AS_TASKS[3] = "as_fishyPipe";
-AS_TASKS[4] = "as_sushiMat";
+AS_TASKS[1] = "as_sushiMat";
+AS_TASKS[2] = "as_littleBrother";
+AS_TASKS[3] = "as_bigBrother";
+AS_TASKS[4] = "as_fishyPipe";
 AS_TASKS[5] = "as_helmet";
 AS_TASKS[6] = "as_skatePark";
 AS_TASKS[7] = "as_grandpa";
@@ -528,8 +562,8 @@ void as_printStatus()
 	line("Grandma", step >= 9);
 	line("Mom", step >= 999);
 	print("Helpers:", "blue");
-	line("fishy pipe", available_amount($item[fishy pipe]) > 0);
-	line("sushi-rolling mat", get_property("hasSushiMat").to_boolean());
+	line("fishy pipe" + (get_property("_fishyPipeUsed").to_boolean() ? " (used today)" : ""), available_amount($item[fishy pipe]) > 0);
+	line("sushi-rolling mat" + (!as_sushiMatInstalled() && available_amount($item[sushi-rolling mat]) > 0 ? " (owned, not installed yet)" : ""), as_sushiMatInstalled());
 	line("aerated diving helmet", available_amount($item[aerated diving helmet]) > 0);
 	line("Skate Park (" + get_property("skateParkStatus") + ")", get_property("skateParkStatus") == "ice");
 	print("Fishy: " + have_effect($effect[Fishy]) + " turns. Adventures: " + my_adventures() + ".", "blue");

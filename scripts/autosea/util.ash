@@ -160,8 +160,20 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		as_warn("Couldn't recover enough HP to adventure safely.");
 		return false;
 	}
+	if(!can_adventure(loc))
+	{
+		as_warn("KoLmafia says you can't adventure at " + loc + " yet.");
+		return false;
+	}
 	as_debug("adventuring at " + loc);
-	return adv1(loc, -1, filter);
+	if(adv1(loc, -1, filter))
+	{
+		return true;
+	}
+	as_warn("The adventure at " + loc + " didn't happen. HP " + my_hp() + "/" + my_maxhp() + ", adventures " + my_adventures()
+		+ ", Fishy " + have_effect($effect[Fishy]) + ", breathing " + as_canBreatheUnderwater() + "/" + as_familiarCanBreatheUnderwater()
+		+ ". KoLmafia's reason is in the CLI just above.");
+	return false;
 }
 
 boolean as_adv(location loc, string extraMaximize)
