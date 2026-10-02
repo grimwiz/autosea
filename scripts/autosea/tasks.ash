@@ -295,11 +295,25 @@ boolean as_sushiMatInstalled()
 	return get_property("hasSushiMat").to_boolean() || (get_campground() contains $item[sushi-rolling mat]);
 }
 
+boolean as_sushiMatRefreshed = false;
+boolean as_sushiMatFailed = false;
+
 boolean as_sushiMat()
 {
-	if(!as_wantSushiMat() || as_sushiMatInstalled())
+	if(!as_wantSushiMat() || as_sushiMatFailed || as_sushiMatInstalled())
 	{
 		return false;
+	}
+	//KoLmafia only learns the mat is installed from the campground page, which may be stale
+	if(!as_sushiMatRefreshed)
+	{
+		as_sushiMatRefreshed = true;
+		visit_url("campground.php");
+		if(as_sushiMatInstalled())
+		{
+			as_info("Your sushi-rolling mat is already installed.");
+			return false;
+		}
 	}
 	//the Old Man hands back a mat you installed in an earlier ascension, so you may already hold one
 	if(!as_fetch(1, $item[sushi-rolling mat]))
@@ -311,7 +325,17 @@ boolean as_sushiMat()
 		return as_buyFromBigBrother($item[sushi-rolling mat], 50);
 	}
 	as_info("Installing the sushi-rolling mat.");
-	use(1, $item[sushi-rolling mat]);
+	string reply = visit_url("inv_use.php?pwd&whichitem=" + $item[sushi-rolling mat].to_int());
+	visit_url("campground.php");
+	if(!as_sushiMatInstalled())
+	{
+		as_sushiMatFailed = true;
+		matcher m = create_matcher("<td[^>]*>((?:(?!<td).)*?(?:mat|kitchen)(?:(?!<td).)*?)</td>", reply);
+		string said = m.find() ? m.group(1).replace_string("<br>", " ").to_string() : reply;
+		said = create_matcher("<[^>]*>", said).replace_all("");
+		as_warn("Using the sushi-rolling mat didn't install it. KoL said: " + said.substring(0, min(300, length(said))));
+		as_warn("Carrying on without the mat; tell the autosea author what KoL said.");
+	}
 	return true;
 }
 
