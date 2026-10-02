@@ -91,6 +91,23 @@ boolean as_clearPendingEncounter()
 	if(page.contains_text("whichchoice") || page.contains_text("choice.php"))
 	{
 		page = visit_url("choice.php");
+		//sea choices autosea knows how to answer
+		int answer = 0;
+		switch(last_choice())
+		{
+			case 403:	//Picking Sides (Skate Park): the ice skates
+				answer = 1;
+				break;
+			case 299:	//Down at the Hatch (the Wreck): open it only to free Big Brother
+				answer = get_property("bigBrotherRescued").to_boolean() ? 2 : 1;
+				break;
+		}
+		if(answer > 0)
+		{
+			as_info("Finishing the open choice " + last_choice() + " with option " + answer + ".");
+			run_choice(answer);
+			return true;
+		}
 		matcher title = create_matcher("<b>([^<]+)</b>", page);
 		as_warn("KoL is waiting for you to finish a choice adventure" + (title.find() ? ": " + title.group(1) : "") + " (choice " + last_choice() + ").");
 		foreach num, text in available_choice_options()

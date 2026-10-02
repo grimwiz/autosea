@@ -376,9 +376,11 @@ boolean as_skatePark()
 	{
 		return false;	//already decided
 	}
-	if(available_amount($item[skate blade]) == 0 && !as_acquire(1, $item[skate blade]))
+	//Picking Sides: side with the ice skates (and take a skate blade). Without this KoLmafia stops at the choice.
+	as_overrideProperty("choiceAdventure403", "1");
+	if(available_amount($item[skate blade]) == 0)
 	{
-		set_property("choiceAdventure403", "1");	//Picking Sides: take the skate blade
+		as_acquire(1, $item[skate blade]);
 	}
 	string gear = available_amount($item[skate blade]) > 0 ? "+equip skate blade" : "";
 	as_info("Fighting the roller skates out of the Skate Park.");
