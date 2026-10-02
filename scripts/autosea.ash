@@ -76,6 +76,10 @@ void main(string... args)
 		return;
 	}
 
+	if(!as_clearPendingEncounter())
+	{
+		return;
+	}
 	as_takeOverSettings();
 	try
 	{

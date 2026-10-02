@@ -75,6 +75,34 @@ void as_takeOverSettings()
 	as_overrideProperty("dontStopForCounters", "true");
 }
 
+// ---------------------------------------------------------------- pending encounters
+// If a fight or choice was left open (for example in the relay browser), KoL redirects every action to it,
+// so item uses and adventures silently do nothing. Check before starting.
+
+boolean as_clearPendingEncounter()
+{
+	string page = visit_url("main.php");
+	if(current_round() > 0 || page.contains_text("fight.php") || page.contains_text("Combat!"))
+	{
+		as_warn("A fight was left open; finishing it with your combat settings.");
+		run_combat();
+		page = visit_url("main.php");
+	}
+	if(page.contains_text("whichchoice") || page.contains_text("choice.php"))
+	{
+		page = visit_url("choice.php");
+		matcher title = create_matcher("<b>([^<]+)</b>", page);
+		as_warn("KoL is waiting for you to finish a choice adventure" + (title.find() ? ": " + title.group(1) : "") + " (choice " + last_choice() + ").");
+		foreach num, text in available_choice_options()
+		{
+			print("    option " + num + ": " + text);
+		}
+		as_warn("Finish it in the relay browser (or tell the autosea author which option to take), then run autosea again.");
+		return false;
+	}
+	return true;
+}
+
 // ---------------------------------------------------------------- state
 
 boolean as_isFishy()
