@@ -19,6 +19,7 @@ Update later with `git update`.
 ```
 autosea          run until Mom is rescued, adventures run low, or something is missing
 autosea status   show progress without adventuring
+autosea farm     farm meat and stats in the best safe sea zone (autosea farm 50 for 50 turns)
 ```
 
 You need to be level 11 (the Old Man won't talk to you before then), and the deeper zones expect a strong level-13+ character. Autosea equips underwater breathing for you and your familiar using KoLmafia's maximizer (`maximize sea`), so you need at least one way to breathe underwater (for example a fishbowl or a diving helmet).
@@ -43,6 +44,26 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_skatePark` / `autosea_sushiMat` / `autosea_helmet` | `true` | Do these optional steps |
 | `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
+
+## Farming
+
+`autosea farm` is for aftercore. Underwater, with the same buffs, monsters drop about as much meat as the Hidden Office Building and give 2–4 times the stats, provided Fishy keeps every adventure at 1 turn.
+
+- **Zone:** the best-paying sea zone that passes the survival check, re-checked every 10 adventures so it moves deeper as you level. For meat (the default) that's the Briniest Deepests from level 16, otherwise the Briny Deeps. With `autosea_farmGoal = stats` it's the Coral Corral or Mer-Kin Outpost from level 16, otherwise the Briny Deeps. The Brinier Deepers (trophyfish) and the Wreck (mine crabs) are never farmed.
+- **Fishy:** kept up before every adventure. By default it stops rather than pay 2 adventures a turn.
+- **Gear:** `sea` plus `autosea_farmMaximize` (default `meat, 1.5 mainstat, 0.5 hp, 2 dr`), and the aquamariner's necklace and ring if you own them, for Better Diver.
+- **Familiar:** `autosea_farmFamiliar` (default Grouper Groupie, if you have it).
+- **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
+- **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
+- **Stops:** at the turn count, your adventure reserve, being Beaten Up, or running out of Fishy. It then reports meat and stats per turn.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `autosea_farmGoal` | `meat` | `meat` or `stats` |
+| `autosea_farmMaximize` | `meat, 1.5 mainstat, 0.5 hp, 2 dr` | Maximizer terms added after `sea` |
+| `autosea_farmFamiliar` | Grouper Groupie | Familiar to farm with |
+| `autosea_farmRequireFishy` | `true` | Stop rather than adventure without Fishy |
+| `autosea_farmMomFood` | `stats` | Mom's daily food (`none` to skip) |
 
 ## Fishy
 

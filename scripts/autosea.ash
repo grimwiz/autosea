@@ -7,9 +7,11 @@ since r29000;
 // Usage (KoLmafia command line):
 //   autosea          run until Mom is rescued, adventures run low, or something is missing
 //   autosea status   show progress without adventuring
+//   autosea farm [N] farm meat and stats in the best safe sea zone for N turns (default: all but the reserve)
 
 import <autosea/util.ash>
 import <autosea/tasks.ash>
+import <autosea/farm.ash>
 
 string as_currentTask;
 
@@ -64,7 +66,19 @@ void as_run()
 // "string..." so KoLmafia doesn't prompt for arguments when run from the Scripts menu
 void main(string... args)
 {
-	string command = count(args) > 0 ? args[0].to_lower_case() : "";
+	//KoLmafia may pass "farm 50" as one argument or several; split it ourselves
+	string joined = "";
+	foreach i, a in args
+	{
+		joined += " " + a;
+	}
+	string[int] words;
+	matcher m = create_matcher("\\S+", joined.to_lower_case());
+	while(m.find())
+	{
+		words[count(words)] = m.group(0);
+	}
+	string command = count(words) > 0 ? words[0] : "";
 	if(my_level() < 11)
 	{
 		as_warn("The Old Man only talks to you from level 11.");
@@ -83,7 +97,15 @@ void main(string... args)
 	as_takeOverSettings();
 	try
 	{
-		as_run();
+		if(command == "farm")
+		{
+			int turns = count(words) > 1 ? words[1].to_int() : my_adventures();
+			as_farm(turns);
+		}
+		else
+		{
+			as_run();
+		}
 	}
 	finally
 	{
