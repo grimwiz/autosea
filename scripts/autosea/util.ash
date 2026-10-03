@@ -268,8 +268,17 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		return false;
 	}
 	as_debug("adventuring at " + loc);
+	int turnsBefore = my_turncount();
+	string encounterBefore = get_property("lastEncounter");
 	if(adv1(loc, -1, filter))
 	{
+		return true;
+	}
+	//KoLmafia stops automation on some quest encounters (e.g. "You've Hit Bottom"); adv1 then reports
+	//failure even though the adventure happened. Count it if the turn counter or the encounter moved.
+	if(my_turncount() > turnsBefore || get_property("lastEncounter") != encounterBefore)
+	{
+		as_debug("adventure happened (" + get_property("lastEncounter") + ") although KoLmafia stopped automation");
 		return true;
 	}
 	as_warn("The adventure at " + loc + " didn't happen. HP " + my_hp() + "/" + my_maxhp() + ", adventures " + my_adventures()
