@@ -37,6 +37,31 @@ as_farmZone[int] as_farmLadder()
 	return ladder;
 }
 
+string as_farmGear();
+
+// a saved outfit to farm in instead of maximizing, e.g. "Watery" (breathing, regen, resistances)
+string as_farmOutfit()
+{
+	return get_property("autosea_farmOutfit");
+}
+
+// wear the farm outfit (if set) or maximize for the farm gear. Returns true if you can breathe underwater.
+boolean as_farmEquip()
+{
+	string name = as_farmOutfit();
+	if(name != "")
+	{
+		if(!is_wearing_outfit(name) && !outfit(name))
+		{
+			as_warn("Couldn't put on the outfit \"" + name + "\".");
+			return false;
+		}
+		//the outfit may not cover breathing for your current familiar
+		return as_equipForSea("");
+	}
+	return as_equipForSea(as_farmGear());
+}
+
 // never farmed: trophyfish (Brinier Deepers), mine crabs (Wreck), quest zones with poor drops
 string as_farmGear()
 {
@@ -78,7 +103,7 @@ location as_pickFarmZone()
 		{
 			continue;
 		}
-		as_equipForSea(as_farmGear());
+		as_farmEquip();
 		if(as_zoneIsSafe(z.loc))
 		{
 			return z.loc;
@@ -128,7 +153,12 @@ void as_farm(int turns)
 			as_warn("Out of affordable Fishy; stopping rather than paying 2 adventures a turn.");
 			break;
 		}
-		if(!as_adv(zone, as_farmGear()))
+		if(!as_farmEquip())
+		{
+			break;
+		}
+		//gear is already on, so pass no extra maximizer terms (that would undo a farm outfit)
+		if(!as_adv(zone, ""))
 		{
 			break;
 		}

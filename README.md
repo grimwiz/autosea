@@ -61,6 +61,7 @@ Change these with `set autosea_<name> = <value>`.
 | --- | --- | --- |
 | `autosea_farmGoal` | `meat` | `meat` or `stats` |
 | `autosea_farmMaximize` | `meat, 1.5 mainstat, 0.5 hp, 2 dr` | Maximizer terms added after `sea` |
+| `autosea_farmOutfit` | (none) | A saved outfit to farm in instead of maximizing, e.g. one with breathing, HP regeneration and resistances for the tougher zones. Autosea still adds familiar breathing if the outfit lacks it |
 | `autosea_farmFamiliar` | Grouper Groupie | Familiar to farm with |
 | `autosea_farmRequireFishy` | `true` | Stop rather than adventure without Fishy |
 | `autosea_farmMomFood` | `stats` | Mom's daily food (`none` to skip) |
