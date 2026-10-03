@@ -45,6 +45,29 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
 
+## Unblemished pearls
+
+Five sea zones each give one unblemished pearl a day. They sell for far more in the mall than they autosell for. Each won fight adds progress depending on your resistance to the zone's element:
+
+| Zone | Element |
+| --- | --- |
+| The Briniest Deepests | cold |
+| The Marinara Trench | hot |
+| Anemone Mine | spooky |
+| Madness Reef | stench |
+| The Dive Bar | sleaze |
+
+At 18 resistance a pearl takes 10 fights instead of 30–60. Whenever autosea adventures in one of these zones and today's pearl isn't found yet, it:
+
+1. adds that element's resistance (capped at 18) to the gear it picks;
+2. tops up with potions that use no stomach, liver or spleen: pec oil and programmable turtle if you own them, then scrolls of minor invulnerability and Ancient Protector Soda from the mall, up to `autosea_pearlBuffMaxPrice` (1,000) each.
+
+`autosea farm` visits the pearl zones first (`autosea_farmPearls`, default on), moves on as each day's pearl drops, then farms as normal. `autosea status` shows which pearls you've found today.
+
+## Grandpa and the Midget Clownfish
+
+Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`autosea_grandpaTopics`). These unlock monster drops that otherwise never drop, and they stay unlocked across ascensions. It never asks about the trophyfish, which adds a very dangerous boss. It also buys and hatches a Midget Clownfish, an underwater familiar, if you don't have one (`autosea_clownfish`). The 1% drop isn't worth farming.
+
 ## Farming
 
 `autosea farm` is for aftercore. Underwater, with the same buffs, monsters drop about as much meat as the Hidden Office Building and give 2–4 times the stats, provided Fishy keeps every adventure at 1 turn.

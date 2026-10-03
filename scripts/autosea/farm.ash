@@ -22,6 +22,17 @@ as_farmZone[int] as_farmLadder()
 		z.minLevel = minLevel;
 		ladder[count(ladder)] = z;
 	}
+	//pearls first: about 80,000 meat each in the mall, one per zone per day
+	if(as_setting("farmPearls", "true").to_boolean())
+	{
+		foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
+		{
+			if(as_pearlAvailable(loc))
+			{
+				add(loc, 13);
+			}
+		}
+	}
 	if(as_setting("farmGoal", "meat") == "stats")
 	{
 		//best stats per turn while still earning ~200-280 meat
@@ -60,6 +71,25 @@ boolean as_farmEquip()
 		return as_equipForSea("");
 	}
 	return as_equipForSea(as_farmGear());
+}
+
+// equip for a specific zone: farm gear plus that zone's pearl resistance, then potion top-up
+boolean as_farmEquipFor(location loc)
+{
+	boolean ok;
+	if(as_farmOutfit() == "" && as_pearlAvailable(loc))
+	{
+		ok = as_equipForSea(as_farmGear() + ", " + as_pearlGear(loc));
+	}
+	else
+	{
+		ok = as_farmEquip();
+	}
+	if(ok)
+	{
+		as_pearlTopUp(loc);
+	}
+	return ok;
 }
 
 // never farmed: trophyfish (Brinier Deepers), mine crabs (Wreck), quest zones with poor drops
@@ -103,7 +133,7 @@ location as_pickFarmZone()
 		{
 			continue;
 		}
-		as_farmEquip();
+		as_farmEquipFor(z.loc);
 		if(as_zoneIsSafe(z.loc))
 		{
 			return z.loc;
@@ -131,8 +161,9 @@ void as_farm(int turns)
 
 	while(my_turncount() - startTurns < turns)
 	{
-		//re-pick every 10 adventures: as stats rise, deeper zones open up
-		if(zone == $location[none] || sincePick >= 10)
+		//re-pick every 10 adventures (as stats rise, deeper zones open up), and as soon as a pearl is found
+		boolean pearlDone = as_pearlProperty(zone) != "" && !as_pearlAvailable(zone);
+		if(zone == $location[none] || sincePick >= 10 || pearlDone)
 		{
 			location next = as_pickFarmZone();
 			if(next == $location[none])
@@ -153,7 +184,7 @@ void as_farm(int turns)
 			as_warn("Out of affordable Fishy; stopping rather than paying 2 adventures a turn.");
 			break;
 		}
-		if(!as_farmEquip())
+		if(!as_farmEquipFor(zone))
 		{
 			break;
 		}

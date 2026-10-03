@@ -77,6 +77,15 @@ void as_takeOverSettings()
 	}
 	//never stop mid-run for a counter or an unexpected choice
 	as_overrideProperty("dontStopForCounters", "true");
+	//sea noncombats that would otherwise stop for manual control: take the free "leave" option
+	//(304 Vent Horizon, 305 sauce vent, 309 Barback, 311 Heavily Invested in Pun Futures)
+	foreach choice in $ints[304, 305, 309, 311]
+	{
+		if(get_property("choiceAdventure" + choice).to_int() == 0)
+		{
+			as_overrideProperty("choiceAdventure" + choice, "2");
+		}
+	}
 }
 
 // ---------------------------------------------------------------- pending encounters

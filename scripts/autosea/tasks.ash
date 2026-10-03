@@ -9,6 +9,7 @@
 //                    step9 (Grandma freed), step10, step11, step12 (black glass), finished (Mom freed)
 
 import <autosea/util.ash>
+import <autosea/pearls.ash>
 
 // ---------------------------------------------------------------- quest helpers
 
@@ -179,6 +180,11 @@ void as_applyBoosts(string expr)
 		{
 			continue;
 		}
+		//never spend stomach, liver or spleen on a boost (and never risk eating something like Instant Karma)
+		if(entry.command.index_of("eat ") == 0 || entry.command.index_of("drink ") == 0 || entry.command.index_of("chew ") == 0)
+		{
+			continue;
+		}
 		if(entry.display.index_of("<font color=gray>") != -1)
 		{
 			continue;	//not available
@@ -200,6 +206,17 @@ boolean as_seaAdv(location loc, string extraMaximize, string filter)
 	if(extraMaximize.contains_text("combat"))
 	{
 		as_applyBoosts("-combat");
+	}
+	//pearl zones: push the zone's element resistance towards 18 before fighting
+	if(as_pearlAvailable(loc))
+	{
+		string gear = extraMaximize + (extraMaximize == "" ? "" : ", ") + as_pearlGear(loc);
+		if(!as_equipForSea(gear))
+		{
+			return as_adv(loc, extraMaximize, filter);	//reports the breathing problem
+		}
+		as_pearlTopUp(loc);
+		return as_adv(loc, "", filter);	//gear is on; don't re-maximize it away
 	}
 	return as_adv(loc, extraMaximize, filter);
 }
@@ -556,19 +573,83 @@ boolean as_mom()
 	return as_seaAdv($location[The Caliginous Abyss], as_momGear(), "as_abyssFilter");
 }
 
+// Grandpa's stories unlock monster drops that otherwise never drop. They persist across ascensions,
+// so this only asks the ones not yet heard. Trophyfish is left out: it adds a very dangerous boss.
+boolean[string] as_grandpaAsked;
+
+boolean as_grandpaTopics()
+{
+	if(as_monkeeStep() < 5 || !as_setting("grandpaTopics", "true").to_boolean())
+	{
+		return false;
+	}
+	string[string] topics = {
+		"grandpaUnlockedFishyWand": "wizardfish;avius ticklium",
+		"grandpaUnlockedEelSauce": "eel",
+		"grandpaUnlockedWaterPoloCap": "neptune flytrap",
+		"grandpaUnlockedSeaRadish": "octopus",
+		"grandpaUnlockedGlowingSyringe": "diver",
+		"grandpaUnlockedJellyfishGel": "reef",
+		"grandpaUnlockedWaterPoloMitt": "belle",
+		"grandpaUnlockedHalibut": "fisherfish",
+		"grandpaUnlockedMarineAquamarine": "mine",
+		"grandpaUnlockedMidgetClownfish": "clownfish",
+		"grandpaUnlockedHairOfTheFish": "lounge lizardfish",
+		"grandpaUnlockedBlankPrescriptionSheet": "nurse shark",
+		"grandpaUnlockedHeavilyInvestedInPunFutures": "scales",
+		"grandpaUnlockedGroupieSpangles": "groupie"
+	};
+	foreach prop, words in topics
+	{
+		if(get_property(prop).to_boolean() || (as_grandpaAsked contains prop))
+		{
+			continue;
+		}
+		as_grandpaAsked[prop] = true;
+		foreach i, topic in words.split_string(";")
+		{
+			as_info("Asking Grandpa about " + topic + ".");
+			cli_execute("grandpa " + topic);
+		}
+		return true;
+	}
+	return false;
+}
+
+// the Midget Clownfish (an underwater familiar) only drops at 1% after Grandpa's clownfish story; buying the hatchling is practical
+boolean as_clownfishTried = false;
+
+boolean as_clownfish()
+{
+	if(as_clownfishTried || have_familiar($familiar[Midget Clownfish]) || !as_setting("clownfish", "true").to_boolean())
+	{
+		return false;
+	}
+	as_clownfishTried = true;
+	if(!as_acquire(1, $item[midget clownfish]))
+	{
+		return false;
+	}
+	as_info("Hatching the midget clownfish.");
+	use(1, $item[midget clownfish]);
+	return true;
+}
+
 // ---------------------------------------------------------------- engine hooks
 
 string[int] AS_TASKS;
 AS_TASKS[0] = "as_oldMan";
 AS_TASKS[1] = "as_sushiMat";
-AS_TASKS[2] = "as_littleBrother";
-AS_TASKS[3] = "as_bigBrother";
-AS_TASKS[4] = "as_fishyPipe";
-AS_TASKS[5] = "as_helmet";
-AS_TASKS[6] = "as_skatePark";
-AS_TASKS[7] = "as_grandpa";
-AS_TASKS[8] = "as_grandma";
-AS_TASKS[9] = "as_mom";
+AS_TASKS[2] = "as_clownfish";
+AS_TASKS[3] = "as_littleBrother";
+AS_TASKS[4] = "as_bigBrother";
+AS_TASKS[5] = "as_fishyPipe";
+AS_TASKS[6] = "as_helmet";
+AS_TASKS[7] = "as_skatePark";
+AS_TASKS[8] = "as_grandpa";
+AS_TASKS[9] = "as_grandpaTopics";
+AS_TASKS[10] = "as_grandma";
+AS_TASKS[11] = "as_mom";
 
 string[int] as_taskOrder()
 {
@@ -608,5 +689,11 @@ void as_printStatus()
 	line("sushi-rolling mat" + (!as_sushiMatInstalled() && available_amount($item[sushi-rolling mat]) > 0 ? " (owned, not installed yet)" : ""), as_sushiMatInstalled());
 	line("aerated diving helmet", available_amount($item[aerated diving helmet]) > 0);
 	line("Skate Park (" + get_property("skateParkStatus") + ")", get_property("skateParkStatus") == "ice");
+	line("Midget Clownfish", have_familiar($familiar[Midget Clownfish]));
+	print("Pearls found today:", "blue");
+	foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
+	{
+		line(loc + " (" + as_pearlElement(loc) + ", resistance " + as_resistance(as_pearlElement(loc)) + ")", !as_pearlAvailable(loc));
+	}
 	print("Fishy: " + have_effect($effect[Fishy]) + " turns. Adventures: " + my_adventures() + ".", "blue");
 }
