@@ -248,6 +248,13 @@ boolean as_zoneIsSafe(location loc)
 
 // ---------------------------------------------------------------- adventuring
 
+// turn counter, adventures, last encounter and sea quest state: if any of these change, an adventure happened
+string as_progressMarker()
+{
+	return my_turncount() + "|" + my_adventures() + "|" + get_property("lastEncounter") + "|" + get_property("questS01OldGuy")
+		+ "|" + get_property("questS02Monkees") + "|" + get_property("momSeaMonkeeProgress") + "|" + get_property("skateParkStatus");
+}
+
 // one adventure in a sea zone. Returns false (and says why) if it could not adventure.
 // filter: name of a combat filter function, or "" to leave combat entirely to your own combat settings.
 boolean as_adv(location loc, string extraMaximize, string filter)
@@ -277,15 +284,14 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		return false;
 	}
 	as_debug("adventuring at " + loc);
-	int turnsBefore = my_turncount();
-	string encounterBefore = get_property("lastEncounter");
+	string before = as_progressMarker();
 	if(adv1(loc, -1, filter))
 	{
 		return true;
 	}
-	//KoLmafia stops automation on some quest encounters (e.g. "You've Hit Bottom"); adv1 then reports
-	//failure even though the adventure happened. Count it if the turn counter or the encounter moved.
-	if(my_turncount() > turnsBefore || get_property("lastEncounter") != encounterBefore)
+	//KoLmafia stops automation on some quest encounters ("You've Hit Bottom", "Granny, Does Your Dogfish Bite?",
+	//Mom's rescue); adv1 then reports failure even though the adventure happened. Count it if anything moved.
+	if(as_progressMarker() != before)
 	{
 		as_debug("adventure happened (" + get_property("lastEncounter") + ") although KoLmafia stopped automation");
 		return true;
