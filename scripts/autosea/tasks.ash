@@ -854,6 +854,7 @@ AS_TASKS[12] = "as_seahorse";
 AS_TASKS[13] = "as_schoolGear";		//defined in deepcity.ash
 AS_TASKS[14] = "as_merkinVocab";
 AS_TASKS[15] = "as_workteaClue";
+AS_TASKS[16] = "as_merkinLibrary";
 
 string[int] as_taskOrder()
 {
@@ -863,11 +864,11 @@ string[int] as_taskOrder()
 string as_stateSignature()
 {
 	string sig = "";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll7, merkinQuestPath]
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath]
 	{
 		sig += get_property(prop) + "|";
 	}
-	foreach it in $items[sand dollar, wriggling flytrap pellet, bubblin' stone, rusty diving helmet, aerated diving helmet, damp old boot, fishy pipe, das boot, sushi-rolling mat, skate blade, Grandma's Note, Grandma's Fuchsia Yarn, Grandma's Chartreuse Yarn, Grandma's Map, black glass, scale-mail underwear, shark jumper, comb jelly, Mer-kin lockkey, Mer-kin stashbox, Mer-kin trailmap, Mer-kin facecowl, Mer-kin waistrope, Mer-kin cheatsheet, Mer-kin wordquiz, Mer-kin worktea]
+	foreach it in $items[sand dollar, wriggling flytrap pellet, bubblin' stone, rusty diving helmet, aerated diving helmet, damp old boot, fishy pipe, das boot, sushi-rolling mat, skate blade, Grandma's Note, Grandma's Fuchsia Yarn, Grandma's Chartreuse Yarn, Grandma's Map, black glass, scale-mail underwear, shark jumper, comb jelly, Mer-kin lockkey, Mer-kin stashbox, Mer-kin trailmap, Mer-kin facecowl, Mer-kin waistrope, Mer-kin cheatsheet, Mer-kin wordquiz, Mer-kin worktea, Mer-kin dreadscroll, Mer-kin healscroll, Mer-kin killscroll]
 	{
 		sig += available_amount(it) + "|";
 	}
@@ -905,6 +906,13 @@ void as_printStatus()
 		line("Vocabulary " + get_property("merkinVocabularyMastery") + "% (cheatsheets " + available_amount($item[Mer-kin cheatsheet]) + ")",
 			get_property("merkinVocabularyMastery").to_int() >= 100);
 		line("Worktea clue", get_property("dreadScroll7").to_int() != 0);
+		line("Mer-kin dreadscroll", available_amount($item[Mer-kin dreadscroll]) > 0);
+		string clues = "";
+		for n from 1 to 8
+		{
+			clues += get_property("dreadScroll" + n).to_int() != 0 ? " " + n : "";
+		}
+		print("  Dreadscroll clues known:" + (clues == "" ? " none" : clues) + " (the Library gives 1, 2, 5, 6, 8)", "black");
 	}
 	print("Pearls found today:", "blue");
 	foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]

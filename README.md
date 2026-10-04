@@ -64,7 +64,13 @@ Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is a
 - **Vocabulary:** uses a wordquiz with each cheatsheet for +10% each, up to `autosea_vocabTarget` (100). It uses any cheatsheets you already hold, and buys the rest. The School is the only other source, and they rarely drop there.
 - **Worktea clue:** eats a nigiri you rolled yourself with a Mer-kin worktea in inventory, for dreadscroll clue 7. It needs 2 free fullness.
 
-The Library (the dreadscroll and its clues), reading the dreadscroll, and the Yog-Urt fight come in later stages.
+**Stage 2, the Mer-kin Library** (wearing the Scholar's Vestments, once vocabulary is done):
+
+- adventures until the 6th encounter gives the Mer-kin dreadscroll;
+- with the dreadscroll in hand, uses a Mer-kin healscroll in a fight for clue 2, and a Mer-kin killscroll for clue 5;
+- answers the Catalog Card (choice 704) by reading an unread book. At 100% vocabulary only the three clue books remain, for clues 1, 6 and 8.
+
+It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 4 need a darkbook skill and a rare knucklebone, so they aren't farmed. `autosea status` lists the known clues. Reading the dreadscroll and the Yog-Urt fight come in a later stage.
 
 ## Unblemished pearls
 

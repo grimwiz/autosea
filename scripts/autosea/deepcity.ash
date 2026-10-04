@@ -151,3 +151,64 @@ boolean as_workteaClue()
 	cli_execute("create 1 beefy nigiri");
 	return true;
 }
+
+// ---------------------------------------------------------------- the Library: dreadscroll and clues
+// In Scholar's Vestments. The 6th Library encounter gives the Mer-kin dreadscroll. With it in hand:
+//   clue 2: use a Mer-kin healscroll in a fight (reveal chance rises with vocabulary)
+//   clue 5: use a Mer-kin killscroll in a fight
+//   clues 1, 6, 8: Catalog Card books (choice 704, answered in choice.ash)
+// Clues 3 (Deep Dark Visions) and 4 (Mer-kin knucklebone) aren't farmed; stage 3 guesses them.
+
+boolean as_clueKnown(int n)
+{
+	return get_property("dreadScroll" + n).to_int() != 0;
+}
+
+// clues the Library can give
+boolean as_libraryCluesDone()
+{
+	return as_clueKnown(1) && as_clueKnown(2) && as_clueKnown(5) && as_clueKnown(6) && as_clueKnown(8);
+}
+
+string as_libraryFilter(int round, monster enemy, string text)
+{
+	if(item_amount($item[Mer-kin dreadscroll]) == 0 || round > 1)
+	{
+		return "";
+	}
+	//the healscroll heals the monster, so it goes first; the killscroll finishes most Mer-kin outright
+	if(!as_clueKnown(2) && item_amount($item[Mer-kin healscroll]) > 0)
+	{
+		return "item Mer-kin healscroll";
+	}
+	if(!as_clueKnown(5) && item_amount($item[Mer-kin killscroll]) > 0)
+	{
+		return "item Mer-kin killscroll";
+	}
+	return "";
+}
+
+boolean as_merkinLibrary()
+{
+	if(!as_deepcityOpen() || as_deepcityPath() != "scholar" || get_property("isMerkinHighPriest").to_boolean())
+	{
+		return false;
+	}
+	//vocabulary first: it trims the Catalog Card to the clue books and raises the scroll reveal chances
+	if(get_property("merkinVocabularyMastery").to_int() < as_setting("vocabTarget", "100").to_int())
+	{
+		return false;
+	}
+	if(item_amount($item[Mer-kin dreadscroll]) > 0 && as_libraryCluesDone())
+	{
+		return false;
+	}
+	if(!have_outfit("Mer-kin Scholar's Vestments"))
+	{
+		as_warn("The Mer-kin Library needs the Mer-kin Scholar's Vestments.");
+		return false;
+	}
+	string goal = item_amount($item[Mer-kin dreadscroll]) == 0 ? "the dreadscroll" : "dreadscroll clues";
+	as_info("Mer-kin Library: looking for " + goal + ".");
+	return as_seaAdv($location[Mer-kin Library], "+outfit Mer-kin Scholar's Vestments", "as_libraryFilter");
+}

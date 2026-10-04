@@ -81,6 +81,30 @@ void main(int choice, string page)
 		case 705:	//Halls Passing in the Night (hallpass): the teacher's lounge if it's open
 			run_choice(get_property("merkinElementaryTeacherUnlock").to_boolean() ? 4 : 2);
 			return;
+		case 704:	//Playing the Catalog Card: read an unread book (at 100% vocabulary only the 3 clue books remain)
+		{
+			//KoLmafia keeps "ID:option:status" per book, refreshed with this page's option numbers
+			int pick = 0;
+			int fallback = 0;
+			foreach i, card in get_property("merkinCatalogChoices").split_string(",")
+			{
+				string[int] parts = card.split_string(":");
+				if(count(parts) < 3)
+				{
+					continue;
+				}
+				if(parts[2] == "unknown" && pick == 0)
+				{
+					pick = parts[1].to_int();
+				}
+				if(parts[2] == "clue" && fallback == 0)
+				{
+					fallback = parts[1].to_int();
+				}
+			}
+			run_choice(pick > 0 ? pick : fallback > 0 ? fallback : 1);
+			return;
+		}
 		case 403:	//Picking Sides (Skate Park): the ice skates
 			run_choice(1);
 			return;
