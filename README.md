@@ -52,7 +52,7 @@ After Mom, autosea tames the seahorse you need to reach the Mer-kin Deepcity (`a
 1. Fights in the Mer-Kin Outpost until a Mer-kin lockkey drops (from a burglar, raider or healer).
 2. Hunts the "Into the Outpost" noncombat with less-combat gear. It picks the tent that matches the lockkey, then tries the first three options in turn until the Mer-kin stashbox turns up.
 3. Opens the stashbox, uses the Mer-kin trailmap (Intense Currents), and asks Grandpa about the currents to open the Coral Corral.
-4. Throughout, throws a sea lasso once per underwater fight until you're an expert (20 points). Sea chaps make each throw count double. The sea cowboy hat would too, but it takes the breathing hat slot.
+4. Throughout, throws a sea lasso once per underwater fight until you're an expert (20 points). Sea chaps add a point per throw. The sea cowboy hat adds another, but it takes the breathing hat slot, so autosea only wears it when breathing is already covered by an active effect or non-hat breathing gear. It never buys or uses anything just for that.
 5. In the Coral Corral, rings 3 sea cowbells at the wild seahorse, then lassos it. Taming costs no adventure. If the lasso isn't expert yet, it runs from the seahorse, which damage can't touch.
 
 ## Unblemished pearls

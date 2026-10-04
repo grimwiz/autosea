@@ -693,10 +693,41 @@ string as_seahorseFilter(int round, monster enemy, string text)
 	return "";
 }
 
+// breathing that doesn't need the hat slot: an effect that's already running (never bought or used for this),
+// or non-hat breathing gear you own
+boolean as_breathingWithoutHat()
+{
+	foreach eff in $effects[Driving Waterproofly, Hyperoxygenated Blood, Mer-kinny Flavor, Oxygenated Blood, Pneumatic, Pumped Stomach, Really Deep Breath]
+	{
+		if(have_effect(eff) > 0)
+		{
+			return true;
+		}
+	}
+	foreach it in $items[old SCUBA tank, makeshift SCUBA gear, Elf Guard SCUBA tank]
+	{
+		if(available_amount(it) > 0 && can_equip(it))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 string as_seahorseGear()
 {
-	//sea chaps double lasso practice (the sea cowboy hat would too, but it takes the breathing hat slot)
-	return !as_lassoExpert() && available_amount($item[sea chaps]) > 0 ? "+equip sea chaps" : "";
+	if(as_lassoExpert())
+	{
+		return "";
+	}
+	//sea chaps and the sea cowboy hat each add a point per lasso throw. The hat takes the breathing hat slot,
+	//so it's only worn when breathing is already covered some other way.
+	string gear = available_amount($item[sea chaps]) > 0 ? "+equip sea chaps" : "";
+	if(available_amount($item[sea cowboy hat]) > 0 && as_breathingWithoutHat())
+	{
+		gear += (gear == "" ? "" : ", ") + "+equip sea cowboy hat";
+	}
+	return gear;
 }
 
 boolean as_seahorse()
