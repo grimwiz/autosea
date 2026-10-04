@@ -22,15 +22,22 @@ as_farmZone[int] as_farmLadder()
 		z.minLevel = minLevel;
 		ladder[count(ladder)] = z;
 	}
-	//pearls first: about 80,000 meat each in the mall, one per zone per day
+	//pearls first (about 80,000 meat each, one per zone per day). The zone with most progress goes first,
+	//so a started pearl is always finished before another is begun.
 	if(as_setting("farmPearls", "true").to_boolean())
 	{
+		location[int] pearls;
 		foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
 		{
 			if(as_pearlAvailable(loc))
 			{
-				add(loc, 13);
+				pearls[count(pearls)] = loc;
 			}
+		}
+		sort pearls by -as_pearlProgress(value);
+		foreach i, loc in pearls
+		{
+			add(loc, 13);
 		}
 	}
 	if(as_setting("farmGoal", "meat") == "stats")
@@ -125,8 +132,10 @@ void as_farmDailies()
 	}
 }
 
-location as_pickFarmZone()
+// turnsLeft: turns remaining in this farm session; a pearl zone is only started if its pearl fits
+location as_pickFarmZone(int turnsLeft)
 {
+	int budget = min(turnsLeft, my_adventures() - as_advReserve());
 	foreach i, z in as_farmLadder()
 	{
 		if(my_level() < z.minLevel || !can_adventure(z.loc))
@@ -134,10 +143,18 @@ location as_pickFarmZone()
 			continue;
 		}
 		as_farmEquipFor(z.loc);
-		if(as_zoneIsSafe(z.loc))
+		if(!as_zoneIsSafe(z.loc))
 		{
-			return z.loc;
+			continue;
 		}
+		//don't start a pearl that can't be finished today: the progress would be wasted at rollover
+		if(as_pearlAvailable(z.loc) && as_pearlFightsLeft(z.loc) > budget)
+		{
+			as_info("Not enough turns for the " + z.loc + " pearl (" + as_pearlFightsLeft(z.loc)
+				+ " fights at " + as_resistance(as_pearlElement(z.loc)) + " " + as_pearlElement(z.loc) + " resistance).");
+			continue;
+		}
+		return z.loc;
 	}
 	return $location[none];
 }
@@ -161,11 +178,13 @@ void as_farm(int turns)
 
 	while(my_turncount() - startTurns < turns)
 	{
-		//re-pick every 10 adventures (as stats rise, deeper zones open up), and as soon as a pearl is found
+		//re-pick every 10 adventures (as stats rise, deeper zones open up) and as soon as a pearl is found,
+		//but never walk away from a pearl in progress
 		boolean pearlDone = as_pearlProperty(zone) != "" && !as_pearlAvailable(zone);
-		if(zone == $location[none] || sincePick >= 10 || pearlDone)
+		boolean pearlInProgress = as_pearlAvailable(zone) && as_pearlProgress(zone) > 0;
+		if(zone == $location[none] || pearlDone || (sincePick >= 10 && !pearlInProgress))
 		{
-			location next = as_pickFarmZone();
+			location next = as_pickFarmZone(turns - (my_turncount() - startTurns));
 			if(next == $location[none])
 			{
 				as_warn("No sea zone is safe to farm with your current gear and stats.");

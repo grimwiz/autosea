@@ -62,7 +62,11 @@ At 18 resistance a pearl takes 10 fights instead of 30–60. Whenever autosea ad
 1. adds that element's resistance (capped at 18) to the gear it picks;
 2. tops up with potions that use no stomach, liver or spleen: pec oil and programmable turtle if you own them, then scrolls of minor invulnerability and Ancient Protector Soda from the mall, up to `autosea_pearlBuffMaxPrice` (1,000) each.
 
-`autosea farm` visits the pearl zones first (`autosea_farmPearls`, default on), moves on as each day's pearl drops, then farms as normal. `autosea status` shows which pearls you've found today.
+`autosea farm` visits the pearl zones first (`autosea_farmPearls`, default on), then farms as normal. Progress is lost at rollover, so a half-finished pearl is worth nothing, and the fights already put into it make each remaining fight worth more. So it:
+
+- works on one pearl at a time, starting with the zone with the most progress, and never walks away from a pearl in progress;
+- only starts a pearl zone if the fights it needs, at your resistance after gear and potions, fit in the turns you have left;
+- in a pearl zone, takes an item noncombat (batter, seaode) only if the item is worth more than the next fight's share of the pearl: the pearl's value (`autosea_pearlValue`, default the mall price) divided by the fights still needed. `autosea status` shows which pearls you've found today.
 
 ## Grandpa and the Midget Clownfish
 

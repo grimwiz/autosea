@@ -48,6 +48,50 @@ int as_resistance(element el)
 	return numeric_modifier(el.to_string() + " Resistance").to_int();
 }
 
+// progress per won fight, in sixtieths of a pearl
+int as_pearlUnitsPerFight(location loc)
+{
+	return max(1, min(6, as_resistance(as_pearlElement(loc)) / 3));
+}
+
+// KoLmafia's running total of the progress shown after each fight (sums of rounded percentages, so approximate)
+float as_pearlProgress(location loc)
+{
+	return get_property(as_pearlProperty(loc) + "Progress").to_float();
+}
+
+// won fights still needed for today's pearl at your current resistance
+int as_pearlFightsLeft(location loc)
+{
+	if(!as_pearlAvailable(loc))
+	{
+		return 0;
+	}
+	float perFight = as_pearlUnitsPerFight(loc) * 100.0 / 60.0;
+	return max(1, ceil((100.0 - as_pearlProgress(loc)) / perFight));
+}
+
+int as_pearlValue()
+{
+	int value = as_setting("pearlValue", "0").to_int();
+	if(value <= 0)
+	{
+		value = mall_price($item[unblemished pearl]);
+	}
+	return value > 0 ? value : 80000;
+}
+
+// what the next fight in this zone is worth towards today's pearl. Grows as progress builds,
+// because progress is lost at rollover: a half-finished pearl is worth nothing.
+int as_pearlTurnValue(location loc)
+{
+	if(!as_pearlAvailable(loc))
+	{
+		return 0;
+	}
+	return as_pearlValue() / as_pearlFightsLeft(loc);
+}
+
 // maximizer terms that push the zone's element resistance up to the useful cap
 string as_pearlGear(location loc)
 {
