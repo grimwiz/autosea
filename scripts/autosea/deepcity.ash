@@ -125,9 +125,20 @@ boolean as_workteaClue()
 	{
 		return false;
 	}
-	if(!as_sushiMatInstalled() || fullness_limit() - my_fullness() < 2)
+	if(!as_sushiMatInstalled())
 	{
-		return false;	//needs room for a nigiri; try again on a day with free fullness
+		return false;
+	}
+	if(fullness_limit() - my_fullness() < 2)
+	{
+		//needs room for a nigiri. Fullness comes back at rollover, so put today's turns to use meanwhile;
+		//tomorrow this runs before farm mode's sushi diet fills the stomach.
+		if(as_libraryCluesDone() && as_setting("farmWhileWaiting", "true").to_boolean())
+		{
+			as_info("Waiting for the worktea clue: it needs 2 free fullness, which comes back at rollover. Run autosea again tomorrow before eating.");
+			as_waitTurns = max(0, my_adventures() - as_advReserve());
+		}
+		return false;
 	}
 	as_workteaTried = true;
 	if(!as_acquire(1, $item[Mer-kin worktea]) || !as_acquire(1, $item[beefy fish meat]) || !as_acquire(1, $item[white rice]))

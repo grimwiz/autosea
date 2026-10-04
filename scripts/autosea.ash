@@ -75,10 +75,10 @@ void as_questLoop()
 		as_waitTurns = 0;
 		as_run();
 		location blocked = as_lastUnsafeZone;
-		if(as_waitTurns > 0 && my_adventures() > as_advReserve() + 2)
+		if(as_waitTurns > 0 && my_adventures() > as_advReserve() + 2 && as_setting("farmWhileWaiting", "true").to_boolean())
 		{
-			//something has to wear off before the quest can continue: farm in the meantime
-			as_info("Farming " + as_waitTurns + " turns while waiting.");
+			//something has to wear off (or roll over) before the quest can continue: farm in the meantime
+			as_info("Farming " + as_waitTurns + " turns while waiting (autosea_farmWhileWaiting).");
 			int waited = my_turncount();
 			as_farm(as_waitTurns);
 			if(my_turncount() == waited)

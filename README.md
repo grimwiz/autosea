@@ -172,6 +172,8 @@ Before entering a zone autosea asks KoLmafia how hard each monster there would h
 
 Before giving up on a quest zone, it retries with defensive gear. If that still isn't enough, it farms for `autosea_farmBlockTurns` (20) turns to get stronger (pearls, then meat and stats, with Mom's Cereal Killer once she's rescued), then tries the quest again. It repeats until the zone opens up or your adventures run low. Set `autosea_farmWhenBlocked = false` to stop instead.
 
+The same goes for steps that must wait for something to wear off or roll over (Deep-Tainted Mind before a dreadscroll re-read, or free fullness for the worktea clue): autosea says what it's waiting for and farms the turns meanwhile (`autosea_farmWhileWaiting`).
+
 
 If a task claims to act three times in a row but neither your turn count nor your quest progress changes, autosea stops with a message instead of looping.
 
