@@ -236,10 +236,16 @@ boolean as_collecting;
 
 // collect qty of an item from the sea, tracking the monster that drops it. Gives up after twice the expected
 // turns (or autosea_collectMaxTurns), or if the zone isn't safe.
+boolean as_dietSpleen();
+boolean as_dietTopUp();
+
 boolean as_collect(int qty, item it, as_source src, int limit)
 {
-	if(my_adventures() - as_advReserve() < min(limit, ceil(src.turns)))
+	as_dietSpleen();	//adventures first: spleen straight away, food and drink if low
+	as_dietTopUp();
+	if(my_adventures() <= as_advReserve())
 	{
+		as_warn("No adventures to collect " + it + " with (" + my_adventures() + " left, reserve " + as_advReserve() + ").");
 		return false;
 	}
 	as_info("Collecting " + (qty - item_amount(it)) + " " + it + " in " + src.loc + " (about " + ceil(src.turns) + " turns each, "
@@ -268,12 +274,23 @@ boolean as_collect(int qty, item it, as_source src, int limit)
 		as_trackMonster = oldTarget;
 		as_collectItem = oldItem;
 	}
+	if(item_amount(it) < qty)
+	{
+		as_info("Collected for " + (my_turncount() - start) + " turns; stopped at "
+			+ (my_turncount() - start >= limit ? "the turn limit (" + limit + ")." : my_adventures() <= as_advReserve() ? "your adventure reserve." : "the reason just above."));
+	}
 	return item_amount(it) >= qty;
 }
 
+// collecting instead of buying: only start if there are adventures enough to likely finish
 boolean as_collect(int qty, item it, as_source src)
 {
-	return as_collect(qty, it, src, min(as_setting("collectMaxTurns", "60").to_int(), ceil(src.turns * (qty - item_amount(it)) * 2) + 5));
+	int limit = min(as_setting("collectMaxTurns", "60").to_int(), ceil(src.turns * (qty - item_amount(it)) * 2) + 5);
+	if(my_adventures() - as_advReserve() < ceil(src.turns * (qty - item_amount(it))))
+	{
+		return false;
+	}
+	return as_collect(qty, it, src, limit);
 }
 
 // "autosea collect <item> [turns]": go and get one of an item from the sea, however it compares with the mall
@@ -304,7 +321,7 @@ void as_collectCommand(item it, int turns)
 		}
 		as_info(it + ": about " + ceil(src.turns) + " turns in " + src.loc + ", tracking the " + src.target
 			+ (as_setting("chaseDolphins", "true").to_boolean() ? ", whistling back any a dolphin steals." : "."));
-		if(!as_collect(1, it, src, turns > 0 ? turns : my_adventures() - as_advReserve()))
+		if(!as_collect(1, it, src, turns > 0 ? turns : 9999))
 		{
 			as_warn("No " + it + " yet. Run it again to keep going.");
 			return;
