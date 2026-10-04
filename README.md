@@ -99,6 +99,21 @@ The Caliginous Abyss sometimes throws a school of many at you: 20 monsters with 
 
 Once both skills are used up, autosea stops for the day instead of risking a school without them, so Mom takes a few days. Set `autosea_abyssPace = false` to keep going anyway.
 
+## Sea noncombats
+
+While it runs, autosea answers sea noncombats with its own choice script (the original choice script is put back afterwards). It takes the item when the item is worth more than the turn:
+
+| Noncombat | Zone | What autosea does |
+| --- | --- | --- |
+| A Vent Horizon | Marinara Trench | Takes bubbling tempura batter (~6,000 meat) if you have 200 MP, up to 3 a day |
+| Barback | Dive Bar | Takes a seaode (~4,000 meat), up to 3 a day |
+| There is Sauce at the Bottom of the Ocean | Marinara Trench | Takes a globe of Deep Sauce only if you already hold a Mer-kin pressureglobe |
+| Heavily Invested in Pun Futures | Madness Reef | Skips: the fish-scale trades lose value at mall prices |
+| Down at the Hatch | The Wreck | Opens it only to free Big Brother |
+| Picking Sides | Skate Park | Sides with the ice skates |
+
+Set `autosea_takeSeaItems = false` to always skip, or `autosea_useChoiceScript = false` to keep your own choice script.
+
 ## Safety
 
 Before entering a zone autosea asks KoLmafia how hard each monster there would hit you with your current gear and buffs. If a typical fight could beat you up, it skips the zone and tells you why.

@@ -77,8 +77,13 @@ void as_takeOverSettings()
 	}
 	//never stop mid-run for a counter or an unexpected choice
 	as_overrideProperty("dontStopForCounters", "true");
-	//sea noncombats that would otherwise stop for manual control: take the free "leave" option
-	//(304 Vent Horizon, 305 sauce vent, 309 Barback, 311 Heavily Invested in Pun Futures)
+	//sea noncombats are decided by autosea's choice script, which can check MP and daily limits.
+	//It replaces your own choice script during the run (set autosea_useChoiceScript = false to keep yours).
+	if(get_property("choiceAdventureScript") == "" || as_setting("useChoiceScript", "true").to_boolean())
+	{
+		as_overrideProperty("choiceAdventureScript", "scripts/autosea/choice.ash");
+	}
+	//fallbacks if the choice script doesn't run: never stop for manual control on these
 	foreach choice in $ints[304, 305, 309, 311]
 	{
 		if(get_property("choiceAdventure" + choice).to_int() == 0)
