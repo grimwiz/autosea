@@ -180,6 +180,21 @@ When collecting is cheaper, autosea goes and gets the item, tracking the monster
 | `autosea_selfSufficiency` | 1 | Above 1 favours in-game sources (1.5: collect even at up to 1.5 times the mall price) |
 | `autosea_collectMaxTurns` | 60 | Most turns spent collecting one batch |
 
+### Collecting things you want for themselves
+
+`autosea collect <item> [turns]` goes and gets an item from the sea, however it compares with the mall. Use it for skill books and collection pieces. For example, `autosea collect Mer-kin darkbook 150` gets the book that teaches Deep Dark Visions.
+
+What it does:
+- Picks the zone and monster with the best chance, and tracks that monster.
+- Dresses for item drop. Where a zone needs it, the right disguise goes on first (the Scholar's Vestments for the Mer-kin Library).
+- Whistles back every copy a dolphin steals.
+- Stops at the turn limit, or when you run out of adventures.
+- Once it has a skill book, it learns the skill (`autosea_learnSkills = false` to keep the book instead).
+
+Dolphins matter more than item drop for rare drops in deep zones. A dolphin steals a missed drop at its base rate times the zone's pressure (1.5 times in the Library), whatever your item drop is. So chasing them roughly doubles your chances there.
+
+`autosea_wantItems` (comma-separated item names) keeps items wanted during normal farming and questing too. They count as worth `autosea_wantValue` (1,000,000) until you have one, or know the skill it teaches. That means their dropper gets tracked where it's worth it, and any a dolphin steals get chased.
+
 ## Paying for buffs
 
 Autosea pays for a buff only while **all the paid buffs running, added together, cost less per turn than a turn earns in the zone you're about to adventure in**.

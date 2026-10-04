@@ -136,7 +136,7 @@ void main(string... args)
 	}
 	//In 11,037 Leagues Under the Sea the Council's quests differ (both Elder Gods, five pearls, then the Nautical
 	//Seaceress), so autosea's aftercore quest route would make the wrong choices. Farming is still fine.
-	if(my_path() == $path[11,037 Leagues Under the Sea] && command != "farm")
+	if(my_path() == $path[11,037 Leagues Under the Sea] && command != "farm" && command != "collect")
 	{
 		as_warn("You're in 11,037 Leagues Under the Sea. autosea's quest route is for aftercore and doesn't fit this path. "
 			+ "Use UnderTheSea (git checkout https://github.com/tottington/UnderTheSea lowIOTM) for the run; "
@@ -155,6 +155,23 @@ void main(string... args)
 		{
 			int turns = count(words) > 1 ? words[1].to_int() : my_adventures();
 			as_farm(turns);
+		}
+		else if(command == "collect")
+		{
+			//"collect <item name> [turns]"
+			int turns = 0;
+			int last = count(words) - 1;
+			if(last >= 2 && words[last].to_int() > 0)
+			{
+				turns = words[last].to_int();
+				last -= 1;
+			}
+			string name = "";
+			for i from 1 to last
+			{
+				name += (name == "" ? "" : " ") + words[i];
+			}
+			as_collectCommand(name.to_item(), turns);
 		}
 		else
 		{

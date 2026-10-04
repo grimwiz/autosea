@@ -118,25 +118,42 @@ record as_source
 	monster target;
 	float turns;	//turns per item, when collecting
 	int cost;	//meat per item
+	string gear;	//maximizer terms the zone needs, such as a disguise
 };
 
 boolean[location] AS_COLLECT_ZONES = $locations[The Briny Deeps, The Brinier Deepers, The Briniest Deepests,
 	An Octopus's Garden, Madness Reef, The Mer-Kin Outpost, The Skate Park, The Coral Corral, Anemone Mine,
-	The Dive Bar, The Marinara Trench];
+	The Dive Bar, The Marinara Trench, Mer-kin Library];
+
+// what a zone needs you to wear, or "-" if you can't go there
+string as_collectGear(location loc)
+{
+	if(loc == $location[Mer-kin Library])
+	{
+		return have_outfit("Mer-kin Scholar's Vestments") ? "+outfit Mer-kin Scholar's Vestments" : "-";
+	}
+	return "";
+}
+
+int as_whistleCost();
 
 as_source as_dropSource(item it)
 {
 	as_source best;
 	best.cost = 999999999;
 	int bestTurn = as_bestTurnValue();
+	boolean chase = as_setting("chaseDolphins", "true").to_boolean() && as_dropValue(it) > as_whistleCost() + bestTurn;
 	foreach loc in AS_COLLECT_ZONES
 	{
-		if(!can_adventure(loc))
+		if(!can_adventure(loc) || as_collectGear(loc) == "-")
 		{
 			continue;
 		}
 		float netItem = numeric_modifier("Item Drop") + as_zonePenalty(loc);
+		//a dolphin steals a drop you missed at its base rate times the zone's pressure, whatever your item drop
+		float pressure = -numeric_modifier("Loc:" + loc, "Item Drop Penalty") / 100;
 		float perFight = 0;
+		float recoveries = 0;
 		monster target = $monster[none];
 		float targetChance = 0;
 		foreach m, w in as_zoneMonsters(loc)
@@ -148,11 +165,13 @@ as_source as_dropSource(item it)
 					continue;
 				}
 				float chance = d.type.contains_text("f") ? d.rate / 100 : min(1.0, d.rate / 100 * max(0.0, 1 + netItem / 100));
-				perFight += w * chance;
-				if(chance > targetChance)
+				float stolen = chase && !d.type.contains_text("f") ? (1 - chance) * min(1.0, d.rate / 100 * pressure) : 0;
+				perFight += w * (chance + stolen);
+				recoveries += w * stolen;
+				if(chance + stolen > targetChance)
 				{
 					target = m;
-					targetChance = chance;
+					targetChance = chance + stolen;
 				}
 			}
 		}
@@ -162,8 +181,8 @@ as_source as_dropSource(item it)
 		}
 		//what a turn here earns besides this item
 		float earns = (as_turnValueKnown(loc) ? as_turnValue(loc) : as_zoneEstimate(loc)) - perFight * as_dropValue(it);
-		float turns = 1 / perFight;
-		int cost = round(turns * max(0.0, bestTurn - earns));
+		float turns = (1 + recoveries) / perFight;	//each recovery is a whistle fight
+		int cost = round(turns * max(0.0, bestTurn - earns) + recoveries / perFight * as_whistleCost());
 		if(cost < best.cost)
 		{
 			best.how = "collect";
@@ -171,6 +190,7 @@ as_source as_dropSource(item it)
 			best.target = target;
 			best.turns = turns;
 			best.cost = cost;
+			best.gear = as_collectGear(loc);
 		}
 	}
 	return best;
@@ -216,10 +236,9 @@ boolean as_collecting;
 
 // collect qty of an item from the sea, tracking the monster that drops it. Gives up after twice the expected
 // turns (or autosea_collectMaxTurns), or if the zone isn't safe.
-boolean as_collect(int qty, item it, as_source src)
+boolean as_collect(int qty, item it, as_source src, int limit)
 {
-	int limit = min(as_setting("collectMaxTurns", "60").to_int(), ceil(src.turns * (qty - item_amount(it)) * 2) + 5);
-	if(my_adventures() - as_advReserve() < limit / 2)
+	if(my_adventures() - as_advReserve() < min(limit, ceil(src.turns)))
 	{
 		return false;
 	}
@@ -227,13 +246,17 @@ boolean as_collect(int qty, item it, as_source src)
 		+ src.cost + " meat each in lost farming, against " + mall_price(it) + " in the mall).");
 	as_collecting = true;
 	monster oldTarget = as_trackMonster;
+	item oldItem = as_collectItem;
 	as_trackMonster = src.target;
+	as_collectItem = it;	//so a dolphin that steals it is always chased
 	int start = my_turncount();
+	//the zone's gear, then as much item drop as the rest of your gear allows
+	string gear = src.gear + (src.gear == "" ? "" : ", ") + "5 item";
 	try
 	{
 		while(item_amount(it) < qty && my_turncount() - start < limit)
 		{
-			if(!as_seaAdv(src.loc, "", "as_trackFilter"))
+			if(!as_seaAdv(src.loc, gear, "as_trackFilter"))
 			{
 				break;
 			}
@@ -243,8 +266,55 @@ boolean as_collect(int qty, item it, as_source src)
 	{
 		as_collecting = false;
 		as_trackMonster = oldTarget;
+		as_collectItem = oldItem;
 	}
 	return item_amount(it) >= qty;
+}
+
+boolean as_collect(int qty, item it, as_source src)
+{
+	return as_collect(qty, it, src, min(as_setting("collectMaxTurns", "60").to_int(), ceil(src.turns * (qty - item_amount(it)) * 2) + 5));
+}
+
+// "autosea collect <item> [turns]": go and get one of an item from the sea, however it compares with the mall
+// (for things you want for themselves, like skill books). Learns the skill if it's a skill book.
+void as_collectCommand(item it, int turns)
+{
+	if(it == $item[none])
+	{
+		as_warn("Which item? For example: autosea collect Mer-kin darkbook 150");
+		return;
+	}
+	skill teaches = string_modifier(it, "Skill").to_skill();
+	if(teaches != $skill[none] && have_skill(teaches))
+	{
+		as_info("You already know " + teaches + ".");
+		return;
+	}
+	if(!as_fetch(1, it))
+	{
+		item oldItem = as_collectItem;
+		as_collectItem = it;	//value it as wanted, so the cheapest source is the quickest
+		as_source src = as_dropSource(it);
+		as_collectItem = oldItem;
+		if(src.how != "collect")
+		{
+			as_warn("autosea doesn't know a sea monster you can reach that drops " + it + ".");
+			return;
+		}
+		as_info(it + ": about " + ceil(src.turns) + " turns in " + src.loc + ", tracking the " + src.target
+			+ (as_setting("chaseDolphins", "true").to_boolean() ? ", whistling back any a dolphin steals." : "."));
+		if(!as_collect(1, it, src, turns > 0 ? turns : my_adventures() - as_advReserve()))
+		{
+			as_warn("No " + it + " yet. Run it again to keep going.");
+			return;
+		}
+	}
+	if(teaches != $skill[none] && !have_skill(teaches) && as_setting("learnSkills", "true").to_boolean())
+	{
+		as_info("Learning " + teaches + " from the " + it + ".");
+		use(1, it);
+	}
 }
 
 // make sure we hold qty of it: closet and storage first, then the cheapest of the mall and the in-game ways.

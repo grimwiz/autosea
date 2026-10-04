@@ -432,8 +432,45 @@ int as_bestTurnValue()
 // reduced by "better diver" gear. KoLmafia models both, but only for the zone it thinks you're in, so set the
 // location before choosing gear.
 
+// Items you want for themselves, such as skill books and collection pieces: autosea_wantItems, comma-separated,
+// plus whatever "autosea collect" is after. They're valued at autosea_wantValue (default 1,000,000) until you
+// have one, or know the skill it teaches, so the monster that drops them gets tracked and dolphins that steal
+// them get chased.
+item as_collectItem;
+
+boolean as_wanted(item it)
+{
+	if(it == $item[none])
+	{
+		return false;
+	}
+	boolean listed = it == as_collectItem;
+	foreach i, name in get_property("autosea_wantItems").split_string(",")
+	{
+		matcher m = create_matcher("^\\s*(.*?)\\s*$", name);
+		if(m.find() && m.group(1) != "" && m.group(1).to_item() == it)
+		{
+			listed = true;
+		}
+	}
+	if(!listed)
+	{
+		return false;
+	}
+	skill teaches = string_modifier(it, "Skill").to_skill();
+	if(teaches != $skill[none])
+	{
+		return !have_skill(teaches);
+	}
+	return it == as_collectItem || available_amount(it) + storage_amount(it) + display_amount(it) == 0;
+}
+
 int as_dropValue(item it)
 {
+	if(as_wanted(it))
+	{
+		return as_setting("wantValue", "1000000").to_int();
+	}
 	if(it.tradeable)
 	{
 		int price = mall_price(it);
