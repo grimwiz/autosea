@@ -44,6 +44,21 @@ void main(int choice, string page)
 		case 311:	//Heavily Invested in Pun Futures: the scale trades lose value at mall prices
 			run_choice(2);
 			return;
+		case 312:	//Into the Outpost: the tent that matches the monster that dropped the lockkey
+		{
+			string dropper = get_property("merkinLockkeyMonster");
+			run_choice(dropper == "Mer-kin burglar" ? 1 : dropper == "Mer-kin raider" ? 2 : dropper == "Mer-kin healer" ? 3 : 4);
+			return;
+		}
+		case 313:	//Sneaky / Aggressive / Mysterious Intent: the stashbox hides behind one of the first three
+		case 314:	//options, so try them in turn
+		case 315:
+		{
+			int next = get_property("autosea_stashboxOption").to_int() % 3 + 1;
+			set_property("autosea_stashboxOption", next);
+			run_choice(item_amount($item[Mer-kin lockkey]) > 0 ? next : 4);
+			return;
+		}
 		case 403:	//Picking Sides (Skate Park): the ice skates
 			run_choice(1);
 			return;

@@ -648,6 +648,107 @@ boolean as_clownfish()
 	return true;
 }
 
+// ---------------------------------------------------------------- the seahorse
+// Chain: Mer-kin lockkey (Outpost burglar/raider/healer drop) -> "Into the Outpost" noncombat -> Mer-kin stashbox
+// -> Mer-kin trailmap -> Intense Currents -> "grandpa currents" opens the Coral Corral. Meanwhile throw a sea lasso
+// in underwater fights until expert (lassoTrainingCount 20; sea chaps make each throw count double). In the Corral,
+// ring 3 sea cowbells at the wild seahorse, then lasso it: taming costs no adventure.
+
+boolean as_wantSeahorse()
+{
+	return get_property("seahorseName") == "" && as_monkeeStep() >= 999 && as_setting("seahorse", "true").to_boolean();
+}
+
+boolean as_lassoExpert()
+{
+	return get_property("lassoTrainingCount").to_int() >= 20;
+}
+
+int as_cowbellsThisFight = 0;
+
+// combat filter for the seahorse chain: tame the seahorse, otherwise practise with a lasso once per fight
+string as_seahorseFilter(int round, monster enemy, string text)
+{
+	if(round <= 1)
+	{
+		as_cowbellsThisFight = 0;
+	}
+	if(enemy == $monster[wild seahorse])
+	{
+		if(!as_lassoExpert() || item_amount($item[sea lasso]) == 0)
+		{
+			return "runaway";	//it's immune to damage; come back once the lasso is expert
+		}
+		if(as_cowbellsThisFight < 3 && item_amount($item[sea cowbell]) > 0)
+		{
+			as_cowbellsThisFight += 1;
+			return "item sea cowbell";
+		}
+		return "item sea lasso";
+	}
+	if(round <= 1 && !as_lassoExpert() && item_amount($item[sea lasso]) > 0)
+	{
+		return "item sea lasso";
+	}
+	return "";
+}
+
+string as_seahorseGear()
+{
+	//sea chaps double lasso practice (the sea cowboy hat would too, but it takes the breathing hat slot)
+	return !as_lassoExpert() && available_amount($item[sea chaps]) > 0 ? "+equip sea chaps" : "";
+}
+
+boolean as_seahorse()
+{
+	if(!as_wantSeahorse())
+	{
+		return false;
+	}
+	//Coral Corral open: tame the seahorse once the lasso is expert
+	if(get_property("corralUnlocked").to_boolean())
+	{
+		if(!as_lassoExpert())
+		{
+			as_info("Practising with the sea lasso (" + get_property("lassoTrainingCount") + "/20) in the Briny Deeps.");
+			return as_seaAdv($location[The Briny Deeps], as_seahorseGear(), "as_seahorseFilter");
+		}
+		if(!as_acquire(3, $item[sea cowbell]) || !as_acquire(1, $item[sea lasso]))
+		{
+			as_warn("Need 3 sea cowbells and a sea lasso to tame the seahorse.");
+			return false;
+		}
+		as_info("Looking for the wild seahorse in the Coral Corral.");
+		return as_seaAdv($location[The Coral Corral], "", "as_seahorseFilter");
+	}
+	if(get_property("intenseCurrents").to_boolean())
+	{
+		as_info("Asking Grandpa about the currents to open the Coral Corral.");
+		cli_execute("grandpa currents");
+		return true;
+	}
+	if(as_fetch(1, $item[Mer-kin trailmap]))
+	{
+		as_info("Following the Mer-kin trailmap to the Intense Currents.");
+		use(1, $item[Mer-kin trailmap]);
+		return true;
+	}
+	if(as_fetch(1, $item[Mer-kin stashbox]))
+	{
+		as_info("Opening the Mer-kin stashbox.");
+		use(1, $item[Mer-kin stashbox]);
+		return true;
+	}
+	//the Outpost: fight for the lockkey, then hunt the "Into the Outpost" noncombat for the stashbox
+	if(item_amount($item[Mer-kin lockkey]) > 0)
+	{
+		as_info("Looking for the Mer-kin stashbox in the Outpost (lockkey from " + get_property("merkinLockkeyMonster") + ").");
+		return as_seaAdv($location[The Mer-Kin Outpost], NC_HUNT + (as_seahorseGear() == "" ? "" : ", " + as_seahorseGear()), "as_seahorseFilter");
+	}
+	as_info("Fighting in the Mer-Kin Outpost for a Mer-kin lockkey (lasso practice " + get_property("lassoTrainingCount") + "/20).");
+	return as_seaAdv($location[The Mer-Kin Outpost], as_seahorseGear(), "as_seahorseFilter");
+}
+
 // ---------------------------------------------------------------- engine hooks
 
 string[int] AS_TASKS;
@@ -663,6 +764,7 @@ AS_TASKS[8] = "as_grandpa";
 AS_TASKS[9] = "as_grandpaTopics";
 AS_TASKS[10] = "as_grandma";
 AS_TASKS[11] = "as_mom";
+AS_TASKS[12] = "as_seahorse";
 
 string[int] as_taskOrder()
 {
@@ -672,11 +774,11 @@ string[int] as_taskOrder()
 string as_stateSignature()
 {
 	string sig = "";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress]
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount]
 	{
 		sig += get_property(prop) + "|";
 	}
-	foreach it in $items[sand dollar, wriggling flytrap pellet, bubblin' stone, rusty diving helmet, aerated diving helmet, damp old boot, fishy pipe, das boot, sushi-rolling mat, skate blade, Grandma's Note, Grandma's Fuchsia Yarn, Grandma's Chartreuse Yarn, Grandma's Map, black glass, scale-mail underwear, shark jumper, comb jelly]
+	foreach it in $items[sand dollar, wriggling flytrap pellet, bubblin' stone, rusty diving helmet, aerated diving helmet, damp old boot, fishy pipe, das boot, sushi-rolling mat, skate blade, Grandma's Note, Grandma's Fuchsia Yarn, Grandma's Chartreuse Yarn, Grandma's Map, black glass, scale-mail underwear, shark jumper, comb jelly, Mer-kin lockkey, Mer-kin stashbox, Mer-kin trailmap]
 	{
 		sig += available_amount(it) + "|";
 	}
@@ -703,6 +805,9 @@ void as_printStatus()
 	line("aerated diving helmet", available_amount($item[aerated diving helmet]) > 0);
 	line("Skate Park (" + get_property("skateParkStatus") + ")", get_property("skateParkStatus") == "ice");
 	line("Midget Clownfish", have_familiar($familiar[Midget Clownfish]));
+	line("Seahorse" + (get_property("seahorseName") != "" ? " (" + get_property("seahorseName") + ")"
+		: " (Corral " + (get_property("corralUnlocked").to_boolean() ? "open" : "closed") + ", lasso " + get_property("lassoTrainingCount") + "/20)"),
+		get_property("seahorseName") != "");
 	print("Pearls found today:", "blue");
 	foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
 	{

@@ -45,6 +45,16 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
 
+## The seahorse
+
+After Mom, autosea tames the seahorse you need to reach the Mer-kin Deepcity (`autosea_seahorse`, default on):
+
+1. Fights in the Mer-Kin Outpost until a Mer-kin lockkey drops (from a burglar, raider or healer).
+2. Hunts the "Into the Outpost" noncombat with less-combat gear. It picks the tent that matches the lockkey, then tries the first three options in turn until the Mer-kin stashbox turns up.
+3. Opens the stashbox, uses the Mer-kin trailmap (Intense Currents), and asks Grandpa about the currents to open the Coral Corral.
+4. Throughout, throws a sea lasso once per underwater fight until you're an expert (20 points). Sea chaps make each throw count double. The sea cowboy hat would too, but it takes the breathing hat slot.
+5. In the Coral Corral, rings 3 sea cowbells at the wild seahorse, then lassos it. Taming costs no adventure. If the lasso isn't expert yet, it runs from the seahorse, which damage can't touch.
+
 ## Unblemished pearls
 
 Five sea zones each give one unblemished pearl a day. They sell for far more in the mall than they autosell for. Each won fight adds progress depending on your resistance to the zone's element:
