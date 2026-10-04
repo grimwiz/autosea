@@ -137,6 +137,8 @@ Set `autosea_takeSeaItems = false` to always skip, or `autosea_useChoiceScript =
 
 Before entering a zone autosea asks KoLmafia how hard each monster there would hit you with your current gear and buffs. If a typical fight could beat you up, it skips the zone and tells you why.
 
+If that stops the quest, autosea farms for `autosea_farmBlockTurns` (20) turns to get stronger (pearls, then meat and stats, with Mom's Cereal Killer once she's rescued), then tries the quest again. It repeats until the zone opens up or your adventures run low. Set `autosea_farmWhenBlocked = false` to stop instead.
+
 
 If a task claims to act three times in a row but neither your turn count nor your quest progress changes, autosea stops with a message instead of looping.
 

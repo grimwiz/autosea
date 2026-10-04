@@ -216,6 +216,9 @@ boolean as_recover()
 // (with your current gear and buffs) times a typical fight length, against your maximum HP.
 boolean[location] as_reportedZones;
 
+// the last zone the survival check refused, so the quest loop can farm to get stronger
+location as_lastUnsafeZone = $location[none];
+
 boolean as_zoneIsSafe(location loc)
 {
 	if(as_setting("ignoreDanger", "false").to_boolean())
@@ -242,6 +245,7 @@ boolean as_zoneIsSafe(location loc)
 	{
 		return true;
 	}
+	as_lastUnsafeZone = loc;
 	if(!(as_reportedZones contains loc))
 	{
 		as_reportedZones[loc] = true;

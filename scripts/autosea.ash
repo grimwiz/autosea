@@ -64,6 +64,37 @@ void as_run()
 }
 
 // "string..." so KoLmafia doesn't prompt for arguments when run from the Scripts menu
+// Run the quest; if it stops because the next zone is too dangerous, farm for a while (stats grow,
+// especially with Mom's Cereal Killer) and try again, until adventures run low or farming can't progress.
+void as_questLoop()
+{
+	while(true)
+	{
+		as_lastUnsafeZone = $location[none];
+		as_run();
+		location blocked = as_lastUnsafeZone;
+		if(blocked == $location[none] || !as_setting("farmWhenBlocked", "true").to_boolean())
+		{
+			return;
+		}
+		if(my_adventures() <= as_advReserve() + 2)
+		{
+			as_info(blocked + " is still too dangerous and adventures are low; stopping for today.");
+			return;
+		}
+		int turns = as_setting("farmBlockTurns", "20").to_int();
+		as_info(blocked + " is too dangerous for now; farming " + turns + " turns to get stronger, then trying again.");
+		int before = my_turncount();
+		as_farm(turns);
+		clear(as_reportedZones);
+		if(my_turncount() == before)
+		{
+			as_warn("Farming couldn't make progress either; stopping.");
+			return;
+		}
+	}
+}
+
 void main(string... args)
 {
 	//KoLmafia may pass "farm 50" as one argument or several; split it ourselves
@@ -104,7 +135,7 @@ void main(string... args)
 		}
 		else
 		{
-			as_run();
+			as_questLoop();
 			//nothing left to quest for: carry on farming, like autoscend carries on to the next task
 			if(as_monkeeStep() >= 999 && as_setting("farmAfterQuest", "false").to_boolean() && my_adventures() > as_advReserve())
 			{
