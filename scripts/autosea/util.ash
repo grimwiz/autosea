@@ -420,11 +420,20 @@ void as_recordTurn(location loc, int value)
 	set_property("autosea_lastFarmZone", loc.to_string());
 }
 
-// the best a turn is known to earn: what spending adventures (drinks, food, spleen) is measured against
+// the best a turn is known to earn in the zones you farm: what spending adventures (drinks, food, spleen) and
+// collecting instead of farming are measured against. Not the last zone you happened to adventure in.
 int as_bestTurnValue()
 {
-	string last = get_property("autosea_lastFarmZone");
-	return last == "" ? as_setting("defaultTurnValue", "400").to_int() : as_turnValue(last.to_location());
+	int best = 0;
+	foreach loc in $locations[The Briny Deeps, The Briniest Deepests, The Coral Corral, The Mer-Kin Outpost,
+		The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
+	{
+		if(as_turnValueKnown(loc))
+		{
+			best = max(best, as_turnValue(loc));
+		}
+	}
+	return best > 0 ? best : as_setting("defaultTurnValue", "400").to_int();
 }
 
 // ---------------------------------------------------------------- what a zone's drops are worth

@@ -465,14 +465,25 @@ boolean[item] AS_SPLEEN_BUY = $items[strange paste, demonic paste, ectoplasmic p
 	grim fairy tale, Unconscious Collective Dream Jar, powdered gold];
 
 // the cheapest of those to buy, if its cost per adventure is below what a farm turn earns
+string as_spleenWhy;	//why nothing was bought, for the report
+
 item as_spleenToBuy(int room)
 {
-	if(!as_setting("buySpleen", "true").to_boolean() || !as_buyingAllowed())
+	if(!as_setting("buySpleen", "true").to_boolean())
 	{
+		as_spleenWhy = "buying spleen items is off (autosea_buySpleen)";
+		return $item[none];
+	}
+	if(!as_buyingAllowed())
+	{
+		as_spleenWhy = can_interact() ? "buying is off (autosea_buy)" : "no mall access yet";
 		return $item[none];
 	}
 	item best = $item[none];
-	float bestCost = as_bestTurnValue();
+	float turnValue = as_bestTurnValue();
+	float bestCost = turnValue;
+	item cheapest = $item[none];
+	float cheapestCost = 999999;
 	foreach it in AS_SPLEEN_BUY
 	{
 		if(it.spleen > room || it.levelreq > my_level() || as_avgAdventures(it) <= 0)
@@ -480,15 +491,31 @@ item as_spleenToBuy(int room)
 			continue;
 		}
 		int price = mall_price(it);
+		if(price <= 0)
+		{
+			continue;
+		}
 		float perAdv = price / as_avgAdventures(it);
-		if(price > 0 && price <= as_setting("spleenMaxValue", "5000").to_int() && perAdv < bestCost)
+		if(perAdv < cheapestCost)
+		{
+			cheapest = it;
+			cheapestCost = perAdv;
+		}
+		if(price <= as_setting("spleenMaxValue", "5000").to_int() && perAdv < bestCost)
 		{
 			best = it;
 			bestCost = perAdv;
 		}
 	}
-	if(best != $item[none] && !as_acquire(1, best))
+	if(best == $item[none])
 	{
+		as_spleenWhy = cheapest == $item[none] ? "no mall price for any spleen item that fits in " + room
+			: "the cheapest, " + cheapest + ", is about " + round(cheapestCost) + " meat an adventure, more than a farm turn earns (" + round(turnValue) + ")";
+		return $item[none];
+	}
+	if(!as_acquire(1, best))
+	{
+		as_spleenWhy = "couldn't buy " + best + " (see above)";
 		return $item[none];
 	}
 	return best;
@@ -532,6 +559,11 @@ boolean as_dietSpleen()
 		}
 		if(best == $item[none])
 		{
+			if(!get_property("_autosea_spleenWhySaid").to_boolean())
+			{
+				as_info("Leaving " + room + " spleen free: " + as_spleenWhy + ".");
+				set_property("_autosea_spleenWhySaid", "true");
+			}
 			break;
 		}
 		int before = my_spleen_use();
