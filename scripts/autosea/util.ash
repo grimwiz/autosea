@@ -422,6 +422,8 @@ void as_recordTurn(location loc, int value)
 
 // the best a turn is known to earn in the zones you farm: what spending adventures (drinks, food, spleen) and
 // collecting instead of farming are measured against. Not the last zone you happened to adventure in.
+int as_turnValueFloor;	//while collecting a wanted item, a turn is worth at least its share of that item
+
 int as_bestTurnValue()
 {
 	int best = 0;
@@ -433,7 +435,7 @@ int as_bestTurnValue()
 			best = max(best, as_turnValue(loc));
 		}
 	}
-	return best > 0 ? best : as_setting("defaultTurnValue", "400").to_int();
+	return max(as_turnValueFloor, best > 0 ? best : as_setting("defaultTurnValue", "400").to_int());
 }
 
 // ---------------------------------------------------------------- what a zone's drops are worth

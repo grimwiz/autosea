@@ -241,8 +241,13 @@ boolean as_dietTopUp();
 
 boolean as_collect(int qty, item it, as_source src, int limit)
 {
+	//while collecting, a turn is worth the item's share: spend on adventures accordingly
+	int oldFloor = as_turnValueFloor;
+	as_turnValueFloor = max(oldFloor, round(as_dropValue(it) / max(1.0, src.turns)));
+	remove_property("_autosea_spleenWhySaid");
 	as_dietSpleen();	//adventures first: spleen straight away, food and drink if low
 	as_dietTopUp();
+	as_turnValueFloor = oldFloor;
 	if(my_adventures() <= as_advReserve())
 	{
 		as_warn("No adventures to collect " + it + " with (" + my_adventures() + " left, reserve " + as_advReserve() + ").");
@@ -251,6 +256,7 @@ boolean as_collect(int qty, item it, as_source src, int limit)
 	as_info("Collecting " + (qty - item_amount(it)) + " " + it + " in " + src.loc + " (about " + ceil(src.turns) + " turns each, "
 		+ src.cost + " meat each in lost farming, against " + mall_price(it) + " in the mall).");
 	as_collecting = true;
+	as_turnValueFloor = max(oldFloor, round(as_dropValue(it) / max(1.0, src.turns)));
 	monster oldTarget = as_trackMonster;
 	item oldItem = as_collectItem;
 	as_trackMonster = src.target;
@@ -273,6 +279,7 @@ boolean as_collect(int qty, item it, as_source src, int limit)
 		as_collecting = false;
 		as_trackMonster = oldTarget;
 		as_collectItem = oldItem;
+		as_turnValueFloor = oldFloor;
 	}
 	if(item_amount(it) < qty)
 	{
