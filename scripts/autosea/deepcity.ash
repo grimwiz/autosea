@@ -39,10 +39,22 @@ string as_deepcityPath()
 
 // ---------------------------------------------------------------- the School
 
+// The facecowl and waistrope are only ingredients: Grandma makes the scholar mask from a crappy Mer-kin mask
+// plus a facecowl, and the scholar tailpiece from a crappy tailpiece plus a waistrope. So they're only
+// farmed when the Scholar route needs a Scholar's Vestments piece you don't have.
+boolean as_needFacecowl()
+{
+	return available_amount($item[Mer-kin scholar mask]) == 0 && available_amount($item[Mer-kin facecowl]) == 0;
+}
+
+boolean as_needWaistrope()
+{
+	return available_amount($item[Mer-kin scholar tailpiece]) == 0 && available_amount($item[Mer-kin waistrope]) == 0;
+}
+
 boolean as_wantSchoolGear()
 {
-	return as_setting("schoolGear", "true").to_boolean()
-		&& (available_amount($item[Mer-kin facecowl]) == 0 || available_amount($item[Mer-kin waistrope]) == 0);
+	return as_setting("schoolGear", "true").to_boolean() && as_deepcityPath() == "scholar" && (as_needFacecowl() || as_needWaistrope());
 }
 
 // olfact the Mer-kin monitor (the only cheatsheet source) so it turns up more often
@@ -57,25 +69,14 @@ string as_schoolFilter(int round, monster enemy, string text)
 	return "";
 }
 
-// Raising Cane (teacher's lounge) only drops the facecowl/waistrope while the matching Scholar's Vestments
-// piece is NOT in inventory, so park those in the closet and wear the gladiator outfit as the disguise.
+// Raising Cane (teacher's lounge) gives the facecowl, then the waistrope. They only drop while the matching
+// Scholar's Vestments piece isn't in inventory, which is always true here: we only come for a missing piece.
 boolean as_schoolGear()
 {
 	if(!as_deepcityOpen() || !as_wantSchoolGear())
 	{
 		return false;
 	}
-	//take them off first if worn, or they'd land back in inventory when the disguise goes on
-	if(have_equipped($item[Mer-kin scholar mask]))
-	{
-		equip($slot[hat], $item[none]);
-	}
-	if(have_equipped($item[Mer-kin scholar tailpiece]))
-	{
-		equip($slot[pants], $item[none]);
-	}
-	as_parkInCloset($item[Mer-kin scholar mask]);
-	as_parkInCloset($item[Mer-kin scholar tailpiece]);
 	string disguise = "+outfit Mer-kin Gladiatorial Gear";
 	if(!have_outfit("Mer-kin Gladiatorial Gear"))
 	{
@@ -86,8 +87,8 @@ boolean as_schoolGear()
 		as_warn("The School needs a Mer-kin disguise other than the Scholar's Vestments for the facecowl and waistrope.");
 		return false;
 	}
-	as_info("Mer-kin Elementary School: teacher's lounge for the "
-		+ (available_amount($item[Mer-kin facecowl]) == 0 ? "facecowl" : "waistrope") + " (monitors may drop cheatsheets).");
+	as_info("Mer-kin Elementary School: teacher's lounge for the " + (as_needFacecowl() ? "facecowl" : "waistrope")
+		+ " (needed for the Scholar's Vestments; monitors may drop cheatsheets).");
 	return as_seaAdv($location[Mer-kin Elementary School], disguise + ", " + NC_HUNT, "as_schoolFilter");
 }
 
@@ -105,7 +106,7 @@ boolean as_merkinVocab()
 	{
 		return false;
 	}
-	//cheatsheets found in the School first; buy only the shortfall once the School work is done
+	//use cheatsheets found in the School while it's being visited anyway; otherwise buy (it's the only source)
 	if(!as_fetch(1, $item[Mer-kin cheatsheet]))
 	{
 		if(as_wantSchoolGear())

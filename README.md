@@ -60,8 +60,8 @@ After Mom, autosea tames the seahorse you need to reach the Mer-kin Deepcity (`a
 
 Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is allowed per ascension, and its reward depends on your class. So `autosea_deepcityPath = auto` (the default) takes the Scholar route to Yog-Urt when you don't yet own your class's "of Hatred" piece. Stage 1 covers:
 
-- **Mer-kin Elementary School:** unlocks the teacher's lounge and collects the **Mer-kin facecowl** and **waistrope** (`autosea_schoolGear`). These only drop while the matching Scholar's Vestments piece is *not* in your inventory, so autosea parks the scholar mask and tailpiece in your closet, wears the Gladiatorial Gear (or Crappy Disguise) as the disguise, and puts them back when it finishes. It olfacts the Mer-kin monitor, the only cheatsheet carrier, up to the daily limit (`autosea_olfactMonitor`).
-- **Vocabulary:** uses a wordquiz with each cheatsheet for +10% each, up to `autosea_vocabTarget` (100). It uses cheatsheets found in the School first and buys only the shortfall once the School work is done.
+- **Mer-kin Elementary School**, only if the Scholar route needs a Scholar's Vestments piece you don't have. The facecowl and waistrope are ingredients: Grandma makes the scholar mask from a crappy Mer-kin mask plus a facecowl, and the tailpiece from a crappy tailpiece plus a waistrope. Autosea unlocks the teacher's lounge and takes them from "Raising Cane", wearing another Mer-kin disguise, and olfacts the Mer-kin monitor (the only cheatsheet carrier) while it's there (`autosea_schoolGear`, `autosea_olfactMonitor`).
+- **Vocabulary:** uses a wordquiz with each cheatsheet for +10% each, up to `autosea_vocabTarget` (100). It uses any cheatsheets you already hold, and buys the rest. The School is the only other source, and they rarely drop there.
 - **Worktea clue:** eats a nigiri you rolled yourself with a Mer-kin worktea in inventory, for dreadscroll clue 7. It needs 2 free fullness.
 
 The Library (the dreadscroll and its clues), reading the dreadscroll, and the Yog-Urt fight come in later stages.

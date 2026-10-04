@@ -896,8 +896,8 @@ void as_printStatus()
 	if(get_property("seahorseName") != "")
 	{
 		print("Deepcity:", "blue");
-		line("Mer-kin facecowl", available_amount($item[Mer-kin facecowl]) > 0);
-		line("Mer-kin waistrope", available_amount($item[Mer-kin waistrope]) > 0);
+		line("Scholar's Vestments" + (have_outfit("Mer-kin Scholar's Vestments") ? "" : " (needs the facecowl/waistrope route)"),
+			have_outfit("Mer-kin Scholar's Vestments"));
 		line("Vocabulary " + get_property("merkinVocabularyMastery") + "% (cheatsheets " + available_amount($item[Mer-kin cheatsheet]) + ")",
 			get_property("merkinVocabularyMastery").to_int() >= 100);
 		line("Worktea clue", get_property("dreadScroll7").to_int() != 0);
