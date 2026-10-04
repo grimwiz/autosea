@@ -180,6 +180,59 @@ boolean as_haveAdventures()
 	return my_adventures() >= as_advReserve() + cost;
 }
 
+// ---------------------------------------------------------------- buff limits
+// The maximizer suggests every useful buff independently, ignoring limits: Accordion Thief songs (3, or 4 with
+// some gear), one expression at a time, and pasta thralls (binding one replaces the current one).
+int as_activeSongs()
+{
+	int n = 0;
+	foreach eff in my_effects()
+	{
+		if(eff.to_skill().song)
+		{
+			n += 1;
+		}
+	}
+	return n;
+}
+
+boolean as_expressionActive()
+{
+	foreach eff in my_effects()
+	{
+		if(eff.to_skill().expression)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+// a maximizer boost that's safe to run unattended: within limits and without swapping gear
+boolean as_boostCommandOk(string command)
+{
+	//skills granted by an item make the maximizer equip that item first; that gear swap would be undone at once
+	return command.index_of("equip") < 0 && command.index_of("unequip") < 0;
+}
+
+boolean as_skillFitsLimits(skill sk)
+{
+	if(sk.dailylimit > 0 && sk.timescast >= sk.dailylimit)
+	{
+		return false;	//already used up today
+	}
+	int maxSongs = (boolean_modifier("Four Songs") ? 4 : 3) + numeric_modifier("Additional Song").to_int();
+	if(sk.song && as_activeSongs() >= maxSongs)
+	{
+		return false;
+	}
+	if(sk.expression && as_expressionActive())
+	{
+		return false;
+	}
+	return sk.to_string().index_of("Bind ") != 0;
+}
+
 // ---------------------------------------------------------------- gear and recovery
 
 boolean as_equipForSea(string extra)

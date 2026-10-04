@@ -155,7 +155,6 @@ void as_farmDailies()
 	}
 }
 
-// turnsLeft: turns remaining in this farm session; a pearl zone is only started if its pearl fits
 // Fill the stomach with sushi before farming: each beefy maki is 3 fullness, 7-12 adventures and 45 turns of Fishy
 // (Fishy stacks), so a full stomach keeps a whole day of sea adventures at 1 turn each. Doing this first also
 // means Veracity's daily setup finds the stomach full and leaves the food alone.
@@ -206,17 +205,28 @@ void as_farmPrep()
 	}
 }
 
-// keep meat and experience buffs from your own skills running (never consumables)
+// keep meat and experience buffs from your own skills running (never consumables). The maximizer suggests every
+// useful skill independently, so respect the limits it ignores: Accordion Thief songs (3, or 4 with some gear),
+// one expression at a time, and never rebind a pasta thrall.
 void as_farmBuffs()
 {
 	string expr = as_farmGoal() == "stats" ? "exp" : as_farmGoal() == "both" ? "meat drop, 0.5 exp" : "meat drop";
 	foreach i, entry in maximize(expr, 0, 0, true, false)
 	{
-		if(entry.score <= 0 || entry.skill == $skill[none] || !have_skill(entry.skill) || entry.command == "")
+		skill sk = entry.skill;
+		if(entry.score <= 0 || sk == $skill[none] || !have_skill(sk) || entry.command == "")
 		{
 			continue;
 		}
-		if(entry.display.index_of("<font color=gray>") != -1 || my_mp() < mp_cost(entry.skill) + 50)
+		if(entry.display.index_of("<font color=gray>") != -1 || my_mp() < mp_cost(sk) + 50)
+		{
+			continue;
+		}
+		if(entry.effect != $effect[none] && have_effect(entry.effect) > 0)
+		{
+			continue;
+		}
+		if(!as_skillFitsLimits(sk) || !as_boostCommandOk(entry.command))
 		{
 			continue;
 		}
@@ -225,12 +235,16 @@ void as_farmBuffs()
 	}
 }
 
+// zones that turned out unsafe once actually geared and buffed this session
+boolean[location] as_farmExcluded;
+
+// turnsLeft: turns remaining in this farm session; a pearl zone is only started if its pearl fits
 location as_pickFarmZone(int turnsLeft)
 {
 	int budget = min(turnsLeft, my_adventures() - as_advReserve());
 	foreach i, z in as_farmLadder()
 	{
-		if(my_level() < z.minLevel || !can_adventure(z.loc))
+		if(my_level() < z.minLevel || !can_adventure(z.loc) || (as_farmExcluded contains z.loc))
 		{
 			continue;
 		}
@@ -258,6 +272,7 @@ int as_totalSubstats()
 
 void as_farm(int turns)
 {
+	clear(as_farmExcluded);
 	int startTurns = my_turncount();
 	int startMeat = my_meat();
 	int startSubs = as_totalSubstats();
@@ -303,8 +318,16 @@ void as_farm(int turns)
 			break;
 		}
 		//gear is already on, so pass no extra maximizer terms (that would undo a farm outfit)
+		as_lastUnsafeZone = $location[none];
 		if(!as_adv(zone, ""))
 		{
+			if(as_lastUnsafeZone == zone)
+			{
+				//it passed the check when picked, but not once buffed and geared for real: try the next zone
+				as_farmExcluded[zone] = true;
+				zone = $location[none];
+				continue;
+			}
 			break;
 		}
 		sincePick += 1;

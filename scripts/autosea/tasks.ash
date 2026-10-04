@@ -195,7 +195,11 @@ void as_applyBoosts(string expr)
 		{
 			continue;	//not available
 		}
-		boolean ownSkill = entry.skill != $skill[none] && have_skill(entry.skill);
+		if(!as_boostCommandOk(entry.command))
+		{
+			continue;
+		}
+		boolean ownSkill = entry.skill != $skill[none] && have_skill(entry.skill) && as_skillFitsLimits(entry.skill);
 		boolean ownItem = entry.item != $item[none] && item_amount(entry.item) > 0;
 		if(ownSkill || ownItem)
 		{
