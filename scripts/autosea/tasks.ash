@@ -144,6 +144,133 @@ int as_fullnessReserve()
 	return scholar ? 2 : 0;
 }
 
+// ---------------------------------------------------------------- diet
+// Spleen first and straight away (nothing waits on it): spleen items you own that give adventures, best per
+// spleen first, then (farming for meat) a lustrous oyster egg. Never Instant Karma, never anything worth more
+// than autosea_spleenMaxValue. Food and drink only when adventures run low, so organs stay open for quest steps:
+// drinks in a batch under The Ode to Booze, food after, and 2 fullness kept for the worktea clue while it's needed.
+
+float as_avgAdventures(item it)
+{
+	matcher m = create_matcher("(\\d+)(?:-(\\d+))?", it.adventures);
+	if(!m.find())
+	{
+		return 0;
+	}
+	float low = m.group(1).to_float();
+	float high = m.group(2) == "" ? low : m.group(2).to_float();
+	return (low + high) / 2;
+}
+
+boolean as_spleenCandidate(item it, int room)
+{
+	if(it.spleen <= 0 || it.spleen > room || it.levelreq > my_level() || it == $item[Instant Karma])
+	{
+		return false;	//Instant Karma is worth more as Karma at ascension
+	}
+	if(it.notes.contains_text("Vampyre") || it.notes.contains_text("Zombie"))
+	{
+		return false;
+	}
+	int maxValue = as_setting("spleenMaxValue", "5000").to_int();
+	return !it.tradeable || mall_price(it) <= maxValue;
+}
+
+boolean as_dietSpleen()
+{
+	if(!as_setting("diet", "true").to_boolean() || !as_setting("useSpleen", "true").to_boolean())
+	{
+		return false;
+	}
+	boolean acted = false;
+	while(spleen_limit() - my_spleen_use() > 0)
+	{
+		int room = spleen_limit() - my_spleen_use();
+		item best = $item[none];
+		float bestRatio = 0;
+		foreach it, n in get_inventory()
+		{
+			if(as_spleenCandidate(it, room) && as_avgAdventures(it) > 0)
+			{
+				float ratio = as_avgAdventures(it) / it.spleen;
+				if(ratio > bestRatio)
+				{
+					best = it;
+					bestRatio = ratio;
+				}
+			}
+		}
+		if(best == $item[none] && as_setting("farmGoal", "both") != "stats" && room >= 1
+			&& have_effect($effect[Lustre After Wealth]) == 0 && item_amount($item[lustrous oyster egg]) > 0)
+		{
+			best = $item[lustrous oyster egg];	//+50% Meat Drop for 50 turns
+		}
+		if(best == $item[none])
+		{
+			break;
+		}
+		int before = my_spleen_use();
+		chew(1, best);
+		if(my_spleen_use() == before)
+		{
+			break;
+		}
+		acted = true;
+	}
+	return acted;
+}
+
+// eat or drink when adventures run low; never touches the worktea fullness
+boolean as_dietTopUp()
+{
+	if(!as_setting("diet", "true").to_boolean() || my_adventures() > as_advReserve() + as_setting("dietAt", "6").to_int())
+	{
+		return false;
+	}
+	int maxPrice = as_setting("dietMaxPrice", "1000").to_int();
+	//drinks first, in a batch under The Ode to Booze
+	item booze = as_setting("booze", "elemental caipiroska").to_item();
+	int batch = as_setting("boozeBatch", "5").to_int();
+	if(booze != $item[none] && booze.inebriety > 0 && inebriety_limit() - my_inebriety() >= booze.inebriety)
+	{
+		int drinks = min(batch, (inebriety_limit() - my_inebriety()) / booze.inebriety);
+		if(as_fetch(drinks, booze) || (mall_price(booze) <= maxPrice && as_acquire(drinks, booze)) || item_amount(booze) > 0)
+		{
+			drinks = min(drinks, item_amount(booze));
+			if(have_skill($skill[The Ode to Booze]) && as_skillFitsLimits($skill[The Ode to Booze]))
+			{
+				while(have_effect($effect[Ode to Booze]) < drinks * booze.inebriety && my_mp() >= mp_cost($skill[The Ode to Booze]))
+				{
+					int odeBefore = have_effect($effect[Ode to Booze]);
+					use_skill(1, $skill[The Ode to Booze]);
+					if(have_effect($effect[Ode to Booze]) == odeBefore)
+					{
+						break;
+					}
+				}
+			}
+			as_info("Drinking " + drinks + " " + booze + (have_effect($effect[Ode to Booze]) > 0 ? " under The Ode to Booze." : "."));
+			drink(drinks, booze);
+			return true;
+		}
+	}
+	//then food, keeping fullness for quest steps
+	item food = as_setting("food", "autumn-spice donut").to_item();
+	int room = fullness_limit() - my_fullness() - as_fullnessReserve();
+	if(food != $item[none] && food.fullness > 0 && room >= food.fullness)
+	{
+		int meals = min(5, room / food.fullness);
+		if(as_fetch(meals, food) || (mall_price(food) <= maxPrice && as_acquire(meals, food)) || item_amount(food) > 0)
+		{
+			meals = min(meals, item_amount(food));
+			as_info("Eating " + meals + " " + food + ".");
+			eat(meals, food);
+			return true;
+		}
+	}
+	return false;
+}
+
 // ---------------------------------------------------------------- Fishy (halves the cost of sea adventures)
 
 void as_ensureFishy()
@@ -227,6 +354,8 @@ void as_applyBoosts(string expr)
 // one adventure in a sea zone, with Fishy and the right gear
 boolean as_seaAdv(location loc, string extraMaximize, string filter)
 {
+	as_dietSpleen();
+	as_dietTopUp();
 	as_ensureFishy();
 	if(extraMaximize.contains_text("combat"))
 	{

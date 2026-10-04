@@ -388,6 +388,8 @@ void as_farm(int turns)
 			sincePick = 0;
 		}
 		as_farmBuffs();
+		as_dietSpleen();
+		as_dietTopUp();
 		as_ensureFishy();
 		if(requireFishy && !as_isFishy())
 		{

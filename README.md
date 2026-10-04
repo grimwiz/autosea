@@ -142,6 +142,15 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 | `autosea_farmRequireFishy` | `true` | Stop rather than adventure without Fishy |
 | `autosea_farmMomFood` | `stats` | Mom's daily food (`none` to skip) |
 
+## Diet
+
+- **Spleen right away**, since nothing waits on it. Autosea chews spleen items you own that give adventures, best adventures per spleen first. When farming for meat it adds a lustrous oyster egg (+50% Meat Drop). It never chews Instant Karma, and never anything worth more than `autosea_spleenMaxValue` (5,000) in the mall.
+- **Food and drink only when adventures run low** (at your reserve plus `autosea_dietAt`, default 6), so your stomach and liver stay open for quest steps:
+  - **Drinks first, in a batch:** up to `autosea_boozeBatch` (5) of `autosea_booze` (elemental caipiroska), with The Ode to Booze cast first if you know it and have a free song slot.
+  - **Then food:** `autosea_food` (autumn-spice donut), keeping 2 fullness free while the worktea clue is pending.
+  - Items come from your inventory, closet or Hagnk's first, then the mall up to `autosea_dietMaxPrice` (1,000) each.
+- `autosea_diet = false` turns all of this off.
+
 ## Fishy
 
 Every sea adventure costs 2 turns unless you have the Fishy effect. Before each adventure autosea tries, in order: Lutz at the Skate Park (30 turns a day, once the roller skates are driven out), the fishy pipe (10 turns a day), sushi, then a sea jelly. Fish meat is cheaper to buy (about 100 meat) than to farm underwater. Buying the sand dollars it needs (about 125, roughly 37,000 meat at current prices) avoids hours of farming.
