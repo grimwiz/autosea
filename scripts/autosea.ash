@@ -171,7 +171,14 @@ void main(string... args)
 			{
 				name += (name == "" ? "" : " ") + words[i];
 			}
-			as_collectCommand(name.to_item(), turns);
+			if(name == "skills")
+			{
+				as_collectSeaSkills(turns);
+			}
+			else
+			{
+				as_collectCommand(name.to_item(), turns);
+			}
 		}
 		else
 		{

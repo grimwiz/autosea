@@ -1440,6 +1440,75 @@ string as_stateSignature()
 	return sig;
 }
 
+// ---------------------------------------------------------------- sea skills
+// Every permable skill the sea teaches: one per class from Grandpa's rescue, and Deep Dark Visions from the
+// Mer-kin darkbook (a 1% drop from Mer-kin researchers in the Library). A skill learned in one life only
+// carries over once permed at Jermery's Permery in Valhalla (100 Karma).
+string[skill] AS_SEA_SKILLS = {
+	$skill[Harpoon!]: "Seal Clubber",
+	$skill[Summon Leviatuga]: "Turtle Tamer",
+	$skill[Tempuramancy]: "Pastamancer",
+	$skill[Deep Saucery]: "Sauceror",
+	$skill[Salacious Cocktailcrafting]: "Disco Bandit",
+	$skill[Donho's Bubbly Ballad]: "Accordion Thief",
+	$skill[Deep Dark Visions]: "darkbook"
+};
+
+// "permed", "hardcore permed", "known" (this life only), or "missing"
+string as_skillState(skill sk)
+{
+	boolean[skill] permed = get_permed_skills();
+	if(permed contains sk)
+	{
+		return permed[sk] ? "hardcore permed" : "permed";
+	}
+	return have_skill(sk) ? "known" : "missing";
+}
+
+void as_printSeaSkills()
+{
+	print("Sea skills:", "blue");
+	foreach sk, how in AS_SEA_SKILLS
+	{
+		string state = as_skillState(sk);
+		string next = "";
+		if(state == "known")
+		{
+			next = " - perm it at Valhalla (100 Karma) or it's lost when you ascend";
+		}
+		else if(state == "missing" && how == "darkbook")
+		{
+			next = " - autosea collect Mer-kin darkbook (Mer-kin researchers, Mer-kin Library)";
+		}
+		else if(state == "missing" && how == my_class().to_string())
+		{
+			next = " - rescuing Grandpa this ascension teaches it (autosea does)";
+		}
+		else if(state == "missing")
+		{
+			next = " - rescue Grandpa as a " + how;
+		}
+		print("  [" + (state == "missing" ? " " : "x") + "] " + sk + " (" + state + ")" + next, state == "missing" ? "black" : "green");
+	}
+}
+
+// "autosea collect skills": go after every sea skill this character can get now
+void as_collectSeaSkills(int turns)
+{
+	as_printSeaSkills();
+	if(as_skillState($skill[Deep Dark Visions]) == "missing")
+	{
+		as_collectCommand($item[Mer-kin darkbook], turns);
+	}
+	foreach sk, how in AS_SEA_SKILLS
+	{
+		if(how == my_class().to_string() && !have_skill(sk))
+		{
+			as_info(sk + " comes from rescuing Grandpa as a " + how + ": run autosea (the quest route) to get there.");
+		}
+	}
+}
+
 void as_printStatus()
 {
 	void line(string name, boolean done)
@@ -1481,6 +1550,7 @@ void as_printStatus()
 		line("Mer-kin High Priest", get_property("isMerkinHighPriest").to_boolean());
 		line("Yog-Urt (" + as_hatredItem() + ")", get_property("yogUrtDefeated").to_boolean() || available_amount(as_hatredItem()) > 0);
 	}
+	as_printSeaSkills();
 	print("Pearls found today:", "blue");
 	foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
 	{

@@ -195,6 +195,19 @@ Dolphins matter more than item drop for rare drops in deep zones. A dolphin stea
 
 `autosea_wantItems` (comma-separated item names) keeps items wanted during normal farming and questing too. They count as worth `autosea_wantValue` (1,000,000) until you have one, or know the skill it teaches. That means their dropper gets tracked where it's worth it, and any a dolphin steals get chased.
 
+### Sea skills
+
+The sea teaches seven permable skills:
+- **Six class skills, one per class,** for rescuing Grandpa: Harpoon! (Seal Clubber), Summon Leviatuga (Turtle Tamer), Tempuramancy (Pastamancer), Deep Saucery (Sauceror), Salacious Cocktailcrafting (Disco Bandit) and Donho's Bubbly Ballad (Accordion Thief).
+- **Deep Dark Visions,** for any class, from the Mer-kin darkbook.
+
+`autosea status` lists each one with its state:
+- **permed:** kept across ascensions;
+- **known:** you have it this life only, so perm it at Valhalla for 100 Karma or lose it when you ascend;
+- **missing:** with how to get it.
+
+`autosea collect skills [turns]` goes after the ones this character can get now: it collects the darkbook in the Library, and points you to the quest route if your class's Grandpa skill is missing. The darkbook also stays wanted while you farm, so a dolphin that steals one is always chased (`autosea_wantSeaSkills = false` to turn that off).
+
 ## Paying for buffs
 
 Autosea pays for a buff only while **all the paid buffs running, added together, cost less per turn than a turn earns in the zone you're about to adventure in**.

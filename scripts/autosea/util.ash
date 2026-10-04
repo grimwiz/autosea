@@ -444,7 +444,8 @@ boolean as_wanted(item it)
 	{
 		return false;
 	}
-	boolean listed = it == as_collectItem;
+	//the Mer-kin darkbook teaches Deep Dark Visions, a sea skill (autosea_wantSeaSkills)
+	boolean listed = it == as_collectItem || (it == $item[Mer-kin darkbook] && as_setting("wantSeaSkills", "true").to_boolean());
 	foreach i, name in get_property("autosea_wantItems").split_string(",")
 	{
 		matcher m = create_matcher("^\\s*(.*?)\\s*$", name);
