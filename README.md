@@ -124,8 +124,8 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 
   Pearl zones add the zone's resistance (up to 18) to every profile, and your aquamariner's necklace and ring are always worn, for Better Diver. The choice is made again every 10 adventures, so it moves back to greedy gear as you get stronger. A saved `autosea_farmOutfit` replaces all of this.
 - **Familiar:** `autosea_farmFamiliar` (default Grouper Groupie, if you have it).
-- **Diet:** first fills your stomach with sushi: beefy maki (3 fullness, 7–12 adventures, 45 turns of Fishy each), with nigiri for the last 2 fullness. Fishy stacks, so a full stomach covers a day of farming. Ingredients are bought (about 1,250 meat a maki, mostly white rice). Set `autosea_farmFillStomach = false` to skip.
-- **Daily setup:** once a day, runs Veracity's meat farm in `nofarm` mode (its daily tasks, meat buffs and clan lounge raids, without its farming loop), but only when your stomach, liver and spleen are full. Its diet step would otherwise replace the sushi, and it can loop when it can't buy food. Fill your liver and spleen yourself. Set `autosea_farmPrep = none` to skip it.
+- **Organs left open:** farm mode doesn't fill your stomach, liver or spleen up front, so later quest steps still have room. Sushi is eaten only when Fishy runs out, and 2 fullness is held back while the worktea clue is pending. `autosea_farmFillStomach = true` fills the stomach with sushi first. `autosea_farmPrep = veracity` runs Veracity's daily setup, but only once all organs are full.
+- **Mad Tea Party:** once a day, buys a DRINK ME potion (about 2,000 meat) and takes the hat buff for `autosea_teaPartyHat` (default 22, Dances with Tweedles: +40% Meat from Monsters; 0 to skip). It uses no organ space.
 - **Buffs:** before each adventure, recasts meat and experience buffs from your own skills that have run out. It never uses consumables for this.
 - **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
 - **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
@@ -134,7 +134,8 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `autosea_farmGoal` | `both` | `both`, `meat` or `stats` |
-| `autosea_farmPrep` | `veracity` | Run Veracity's daily setup first (`none` to skip) |
+| `autosea_farmPrep` | `none` | `veracity` runs Veracity's daily setup first, but only once stomach, liver and spleen are full |
+| `autosea_teaPartyHat` | 22 | Mad Tea Party hat length (22 = +40% Meat from Monsters; 0 to skip) |
 | `autosea_farmMaximize` | `meat, 1.5 mainstat, 0.5 hp, 2 dr` | Maximizer terms added after `sea` |
 | `autosea_farmOutfit` | (none) | A saved outfit to farm in instead of maximizing, e.g. one with breathing, HP regeneration and resistances for the tougher zones. Autosea still adds familiar breathing if the outfit lacks it |
 | `autosea_farmFamiliar` | Grouper Groupie | Familiar to farm with |

@@ -129,6 +129,16 @@ boolean as_sushiMatInstalled()
 	return get_property("hasSushiMat").to_boolean() || (get_campground() contains $item[sushi-rolling mat]);
 }
 
+// fullness held back for quest steps that need to eat: the worktea clue needs a self-rolled nigiri
+int as_fullnessReserve()
+{
+	if(get_property("dreadScroll7").to_int() == 0 && available_amount($item[Mer-kin dreadscroll]) > 0)
+	{
+		return 2;
+	}
+	return 0;
+}
+
 // ---------------------------------------------------------------- Fishy (halves the cost of sea adventures)
 
 void as_ensureFishy()
@@ -151,7 +161,7 @@ void as_ensureFishy()
 	}
 	//sushi: 3 fullness of food you'd eat anyway, 7-12 adventures and 45 Fishy. Ingredients come from the mall
 	//(fish meat ~100, seaweed ~140, white rice ~1000), which is far cheaper than farming fish meat underwater.
-	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled() && fullness_limit() - my_fullness() >= 3)
+	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled() && fullness_limit() - my_fullness() - as_fullnessReserve() >= 3)
 	{
 		if(as_acquire(1, $item[beefy fish meat]) && as_acquire(1, $item[white rice]) && as_acquire(1, $item[seaweed]))
 		{

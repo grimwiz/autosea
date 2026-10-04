@@ -218,14 +218,14 @@ boolean as_farmEquipFor(location loc)
 // means Veracity's daily setup finds the stomach full and leaves the food alone.
 void as_farmDiet()
 {
-	if(!as_setting("farmFillStomach", "true").to_boolean() || !as_setting("eatSushi", "true").to_boolean() || !as_sushiMatInstalled())
+	if(!as_setting("farmFillStomach", "false").to_boolean() || !as_setting("eatSushi", "true").to_boolean() || !as_sushiMatInstalled())
 	{
 		return;
 	}
-	while(fullness_limit() - my_fullness() >= 2)
+	while(fullness_limit() - my_fullness() - as_fullnessReserve() >= 2)
 	{
 		int before = my_fullness();
-		boolean maki = fullness_limit() - my_fullness() >= 3;
+		boolean maki = fullness_limit() - my_fullness() - as_fullnessReserve() >= 3;
 		item fish = $item[beefy fish meat];
 		if(!as_acquire(1, fish) || !as_acquire(1, $item[white rice]) || (maki && !as_acquire(1, $item[seaweed])))
 		{
@@ -245,7 +245,7 @@ void as_farmDiet()
 // Only with stomach, liver and spleen full: otherwise its diet step tries to buy food and can loop.
 void as_farmPrep()
 {
-	if(as_setting("farmPrep", "veracity") != "veracity" || get_property("_autosea_vmfPrep").to_boolean())
+	if(as_setting("farmPrep", "none") != "veracity" || get_property("_autosea_vmfPrep").to_boolean())
 	{
 		return;
 	}
@@ -260,6 +260,27 @@ void as_farmPrep()
 	if(!cli_execute("call scripts/VeracityMeatFarm.ash nofarm"))
 	{
 		as_warn("Veracity's daily setup didn't complete (is VeracityMeatFarm.ash installed?). Farming without it.");
+	}
+}
+
+// The Mad Tea Party: one buff a day picked by the length of the hat you wear; 22 letters gives
+// Dances with Tweedles (+40% Meat from Monsters). Costs a DRINK ME potion (~2,000 meat), no organ space.
+void as_farmTeaParty()
+{
+	int length = as_setting("teaPartyHat", as_farmGoal() == "stats" ? "0" : "22").to_int();
+	if(length <= 0 || get_property("_madTeaParty").to_boolean())
+	{
+		return;
+	}
+	if(!as_fetch(1, $item[&quot;DRINK ME&quot; potion]) && have_effect($effect[Down the Rabbit Hole]) == 0
+		&& !as_acquire(1, $item[&quot;DRINK ME&quot; potion]))
+	{
+		return;
+	}
+	as_info("Visiting the Mad Tea Party for a hat buff (hat length " + length + ").");
+	if(!cli_execute("hatter " + length))
+	{
+		as_warn("No hat with a " + length + "-letter name for the Mad Tea Party (autosea_teaPartyHat).");
 	}
 }
 
@@ -338,6 +359,7 @@ void as_farm(int turns)
 
 	as_farmDiet();
 	as_farmPrep();
+	as_farmTeaParty();
 	as_farmFamiliar();
 	as_farmDailies();
 	location zone = $location[none];
