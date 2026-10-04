@@ -147,7 +147,13 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 Autosea pays for a buff only while **all the paid buffs running, added together, cost less per turn than a turn earns in the zone you're about to adventure in**.
 
 - **What a turn earns:** autosea records the meat each adventure brings in, per zone, as a running average (`autosea_turnValue_<zone id>`). While a pearl is in progress, the pearl's value divided by the fights still needed is added on top. A zone with no record yet counts as `autosea_defaultTurnValue` (400).
-- **What a buff costs per turn:** item price divided by the effect's duration. Items you already own count at their mall price, since you could sell them instead. The DRINK ME potion for the Mad Tea Party counts over its buff's 30 turns.
+- **What a buff costs per turn:** (meat price + turns spent getting it × what a turn earns) ÷ the turns it actually helps. Items you already own count at their mall price, since you could sell them instead.
+- **The turns a buff actually helps** can be fewer than its duration:
+  - Without Fishy, each sea adventure uses 2 turns, so a buff lasts half as many adventures.
+  - It's capped at the adventures you have left today.
+  - A pearl resistance potion only helps until the pearl drops, so it's capped at the fights still needed.
+  - Any turns spent getting the buff come off its useful turns.
+- **The Mad Tea Party** takes no turn, and its buff lasts 30.
 - **Covered:** the lustrous oyster egg, the Tea Party, and the pearl resistance potions.
 - **Fishy:** sea jelly counts towards the total, but it's judged against a whole turn, since Fishy saves one on every sea adventure.
 - **Spending adventures:** food, drink and spleen items are bought or used only if they cost less per adventure than your last farm zone earns a turn. That's why voodoo snuff (about 2,600 a turn at mall price) stays in your inventory.

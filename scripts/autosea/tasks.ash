@@ -204,7 +204,7 @@ boolean as_dietSpleen()
 		location zone = get_property("autosea_lastFarmZone").to_location();
 		if(best == $item[none] && as_setting("farmGoal", "both") != "stats" && room >= 1
 			&& have_effect($effect[Lustre After Wealth]) == 0 && item_amount($item[lustrous oyster egg]) > 0
-			&& as_worthBuff(as_costPerTurn($item[lustrous oyster egg]), zone))
+			&& as_worthBuff(as_costPerTurn($item[lustrous oyster egg], zone), zone))
 		{
 			best = $item[lustrous oyster egg];	//+50% Meat Drop for 50 turns
 		}
@@ -330,7 +330,7 @@ void as_ensureFishy(location loc)
 	if(as_setting("useSpleen", "true").to_boolean() && spleen_limit() - my_spleen_use() >= 1)
 	{
 		//Fishy saves a whole adventure per sea turn, so it's worth up to that turn's value
-		boolean jellyWorth = as_costPerTurn($item[sea jelly]) <= as_zoneWorth(loc);
+		boolean jellyWorth = as_costPerTurn($item[sea jelly], loc) <= as_zoneWorth(loc);
 		if(jellyWorth && (as_fetch(1, $item[sea jelly]) || (mall_price($item[sea jelly]) <= as_setting("fishyMaxPrice", "1000").to_int() && as_acquire(1, $item[sea jelly]))))
 		{
 			chew(1, $item[sea jelly]);

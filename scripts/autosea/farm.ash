@@ -272,9 +272,9 @@ void as_farmTeaParty()
 	{
 		return;
 	}
-	//the hat buff lasts 30 turns
+	//the hat buff lasts 30 turns, and the visit itself takes none
 	location zone = get_property("autosea_lastFarmZone").to_location();
-	int perTurn = mall_price($item[&quot;DRINK ME&quot; potion]) / 30;
+	int perTurn = as_buffCost(mall_price($item[&quot;DRINK ME&quot; potion]), 0, 30, 0, zone);
 	if(item_amount($item[&quot;DRINK ME&quot; potion]) == 0 && have_effect($effect[Down the Rabbit Hole]) == 0 && !as_worthBuff(perTurn, zone))
 	{
 		as_info("Skipping the Mad Tea Party: about " + perTurn + " meat a turn, more than the buffs are worth here.");

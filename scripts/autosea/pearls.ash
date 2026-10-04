@@ -102,11 +102,43 @@ int as_zoneWorth(location loc)
 	return as_turnValue(loc) + (as_pearlAvailable(loc) ? as_pearlTurnValue(loc) : 0);
 }
 
-int as_costPerTurn(item it)
+// The turns a buff actually helps: its duration in adventures (a sea adventure without Fishy uses 2 turns),
+// cut to the adventures left today and to `cap` when the benefit ends sooner (a resistance potion stops
+// helping once the pearl drops), less any turns spent getting it.
+int as_usefulTurns(int duration, int turnsToGet, int cap)
 {
-	int turns = numeric_modifier(it, "Effect Duration").to_int();
+	int adventures = have_effect($effect[Fishy]) > 0 ? duration : duration / 2;
+	int useful = min(adventures, my_adventures() - turnsToGet);
+	if(cap > 0)
+	{
+		useful = min(useful, cap);
+	}
+	return max(0, useful);
+}
+
+// meat per useful turn: the price plus the turns spent getting it (each worth a turn in loc), over the turns it helps
+int as_buffCost(int price, int turnsToGet, int duration, int cap, location loc)
+{
+	int useful = as_usefulTurns(duration, turnsToGet, cap);
+	int total = price + turnsToGet * as_turnValue(loc);
+	return useful > 0 ? total / useful : 999999;
+}
+
+// for a potion: owned items count at mall price (they could be sold); using one takes no turns
+int as_costPerTurn(item it, location loc, int cap)
+{
 	int price = it.tradeable ? max(0, mall_price(it)) : 0;
-	return turns > 0 ? price / turns : price;
+	int duration = numeric_modifier(it, "Effect Duration").to_int();
+	if(effect_modifier(it, "Effect") == $effect[Fishy] && have_effect($effect[Fishy]) == 0)
+	{
+		duration *= 2;	//Fishy itself makes every sea adventure a single turn
+	}
+	return as_buffCost(price, 0, duration, cap, loc);
+}
+
+int as_costPerTurn(item it, location loc)
+{
+	return as_costPerTurn(it, loc, 0);
 }
 
 // paid buffs autosea uses, and what their running effects cost per turn
@@ -119,7 +151,7 @@ AS_PAID_SOURCES[4] = $item[pec oil];
 AS_PAID_SOURCES[5] = $item[programmable turtle];
 AS_PAID_SOURCES[6] = $item[Polysniff Perfume];
 
-int as_committedCost()
+int as_committedCost(location loc)
 {
 	int total = 0;
 	foreach i, it in AS_PAID_SOURCES
@@ -127,7 +159,7 @@ int as_committedCost()
 		effect eff = effect_modifier(it, "Effect");
 		if(eff != $effect[none] && have_effect(eff) > 0)
 		{
-			total += as_costPerTurn(it);
+			total += as_costPerTurn(it, loc);
 		}
 	}
 	if(have_effect($effect[Dances with Tweedles]) > 0)
@@ -140,7 +172,7 @@ int as_committedCost()
 // is one more paid buff (costing costPerTurn) worth it for adventuring in loc?
 boolean as_worthBuff(int costPerTurn, location loc)
 {
-	int committed = as_committedCost();
+	int committed = as_committedCost(loc);
 	int worth = as_zoneWorth(loc);
 	if(committed + costPerTurn < worth)
 	{
@@ -177,7 +209,7 @@ void as_pearlTopUp(location loc)
 			return false;
 		}
 		//worth it only while all paid buffs together cost less than a fight here earns
-		if(!as_worthBuff(as_costPerTurn(it), loc))
+		if(!as_worthBuff(as_costPerTurn(it, loc, as_pearlFightsLeft(loc)), loc))
 		{
 			return false;
 		}
