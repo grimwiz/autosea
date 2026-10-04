@@ -53,16 +53,18 @@ as_farmZone[int] as_farmLadder()
 		add($location[The Coral Corral], 16);
 		add($location[The Mer-Kin Outpost], 16);
 	}
-	else if(goal == "both")
-	{
-		//the Briniest Deepests: top meat and ~138 stats a fight; the Corral: ~218 stats with decent meat
-		add($location[The Briniest Deepests], 16);
-		add($location[The Coral Corral], 16);
-	}
 	else
 	{
-		//best meat per turn
-		add($location[The Briniest Deepests], 16);
+		//the two best earners, best first: the Briniest Deepests (meat, and Fishbreath-only drops) and the Coral
+		//Corral (sea lassos). Ranked by what a turn has actually brought in there, or an estimate until farmed.
+		location[int] earners;
+		earners[0] = $location[The Briniest Deepests];
+		earners[1] = $location[The Coral Corral];
+		sort earners by -(as_turnValueKnown(value) ? as_turnValue(value) : as_zoneEstimate(value));
+		foreach i, loc in earners
+		{
+			add(loc, 16);
+		}
 	}
 	add($location[The Briny Deeps], 13);
 	return ladder;
@@ -141,29 +143,25 @@ void as_farmDailies()
 // Re-chosen whenever the zone is re-picked (every 10 adventures), so it drifts back to greedy as you grow.
 string as_farmProfile(int i, location loc)
 {
-	string greedy = "2 meat, 2 exp";
-	if(as_farmGoal() == "stats")
-	{
-		greedy = "0.5 meat, 3 exp";
-	}
+	set_location(loc);	//the maximizer judges drops against this zone's pressure penalty (and your better diver gear)
+	boolean stats = as_farmGoal() == "stats";
 	string gear;
 	switch(i)
 	{
-		case 0: gear = greedy; break;
-		case 1: gear = "meat, exp, 1 hp, 3 dr"; break;
+		case 0: gear = as_dropTerms(loc, stats ? 0.25 : 1.0) + (stats ? ", 3 exp" : ", 2 exp"); break;
+		case 1: gear = as_dropTerms(loc, stats ? 0.15 : 0.5) + ", exp, 1 hp, 3 dr"; break;
 		default: gear = as_defensiveTerms() + ", 0.5 exp"; break;
 	}
-	foreach it in $items[aquamariner's necklace, aquamariner's ring]
+	if(gear.starts_with(", "))
 	{
-		if(available_amount(it) > 0 && can_equip(it))
-		{
-			gear += ", +equip " + it;	//Better Diver and meat; the maximizer doesn't value Better Diver
-		}
+		gear = gear.substring(2);
 	}
-	if(i == 0 && as_farmGoal() != "stats" && (available_amount($item[Mer-kin begsign]) > 0 || as_acquire(1, $item[Mer-kin begsign]))
-		&& can_equip($item[Mer-kin begsign]))
+	//Mer-kin begsign: +40% Meat Drop underwater, worth buying only where meat matters more than items
+	float netItem = numeric_modifier("Item Drop") + as_zonePenalty(loc);
+	if(i == 0 && !stats && as_zoneBaseMeat(loc) / 100 >= as_zoneItemSlope(loc, netItem)
+		&& (available_amount($item[Mer-kin begsign]) > 0 || as_acquire(1, $item[Mer-kin begsign])) && can_equip($item[Mer-kin begsign]))
 	{
-		gear += ", +equip Mer-kin begsign";	//+40% Meat Drop underwater
+		gear += ", +equip Mer-kin begsign";
 	}
 	if(as_pearlAvailable(loc))
 	{
@@ -177,6 +175,7 @@ string[location] as_farmChosen;	//the profile gear chosen for each zone this pic
 // equip for a specific zone: the most profitable safe profile (or the farm outfit), then pearl potions
 boolean as_farmEquipFor(location loc)
 {
+	set_location(loc);
 	boolean ok;
 	if(as_farmOutfit() != "")
 	{
@@ -293,6 +292,28 @@ void as_farmTeaParty()
 	}
 }
 
+// Fishbreath (bazookafish bubble gum, 5 turns) makes the Briniest Deepests' best drops possible: the
+// temporary teardrop tattoo, shark cartilage and eel battery. But every monster there "flips out" (double attack
+// and defence), which autosea's danger check can't see, so it's off unless autosea_fishbreath is true, and it
+// stops for the day after a lost fight.
+void as_farmFishbreath(location zone)
+{
+	if(zone != $location[The Briniest Deepests] || !as_setting("fishbreath", "false").to_boolean()
+		|| get_property("_autosea_fishbreathLost").to_boolean() || have_effect($effect[Fishbreath]) > 0)
+	{
+		return;
+	}
+	item gum = $item[bazookafish bubble gum];
+	if(!as_worthBuff(as_costPerTurn(gum, zone), zone))
+	{
+		return;
+	}
+	if(as_fetch(1, gum) || (mall_price(gum) <= as_setting("fishbreathMaxPrice", "500").to_int() && as_acquire(1, gum)))
+	{
+		use(1, gum);
+	}
+}
+
 // keep meat and experience buffs from your own skills running (never consumables). The maximizer suggests every
 // useful skill independently, so respect the limits it ignores: Accordion Thief songs (3, or 4 with some gear),
 // one expression at a time, and never rebind a pasta thrall.
@@ -400,6 +421,7 @@ void as_farm(int turns)
 		as_dietSpleen();
 		as_dietTopUp();
 		as_ensureFishy(zone);
+		as_farmFishbreath(zone);
 		if(requireFishy && !as_isFishy())
 		{
 			as_warn("Out of affordable Fishy; stopping rather than paying 2 adventures a turn.");
@@ -424,6 +446,15 @@ void as_farm(int turns)
 		}
 		sincePick += 1;
 		//stop only if this fight was lost: a Beaten Up left over from an earlier quest fight doesn't count
+		if(get_property("_lastCombatLost").to_boolean() && get_property("lastEncounter") != "" && current_round() == 0
+			&& have_effect($effect[Fishbreath]) > 0)
+		{
+			//the flipped-out monsters were too much: farm here without Fishbreath for the rest of the day
+			as_warn("Lost a fight in " + zone + " with Fishbreath; no more Fishbreath today.");
+			set_property("_autosea_fishbreathLost", "true");
+			continue;
+		}
+		as_afterSeaAdv();	//chase a dolphin that stole something worth more than the turn
 		if(get_property("_lastCombatLost").to_boolean() && get_property("lastEncounter") != "" && current_round() == 0)
 		{
 			as_warn("Lost a fight in " + zone + "; stopping farming there. Try a shallower zone or more defensive gear.");

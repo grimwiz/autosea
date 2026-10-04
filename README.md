@@ -115,25 +115,36 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 
 `autosea farm` is for aftercore. Underwater, with the same buffs, monsters drop about as much meat as the Hidden Office Building and give 2–4 times the stats, provided Fishy keeps every adventure at 1 turn.
 
-- **Zone:** the best sea zone that passes the survival check, re-checked every 10 adventures so it moves deeper as you level. `autosea_farmGoal` picks the order: `both` (the default: the Briniest Deepests, then the Coral Corral from level 16), `meat` (the Briniest Deepests from level 16) or `stats` (the Coral Corral or Mer-Kin Outpost from level 16). The Briny Deeps is the fallback for all three. The Brinier Deepers (trophyfish) and the Wreck (mine crabs) are never farmed.
+- **Zone:** the best sea zone that passes the survival check, re-checked every 10 adventures so it moves deeper as you level. Pearls come first. After that, for `both` (the default) and `meat`:
+  - the Briniest Deepests and the Coral Corral (from level 16) are ranked by what a turn has actually brought in there, meat plus the mall value of the drops;
+  - until a zone has a record, an estimate from its monsters' meat and drop tables is used instead;
+  - with the Corral's sea lassos counted, it often comes out on top.
+
+  `stats` uses the Coral Corral or the Mer-Kin Outpost. The Briny Deeps is the fallback for all three. The Brinier Deepers (trophyfish) and the Wreck (mine crabs) are never farmed.
 - **Fishy:** kept up before every adventure. By default it stops rather than pay 2 adventures a turn.
 - **Gear, balanced against danger:** for each zone autosea tries three gear profiles, most profitable first, and uses the first that passes the survival check:
-  1. greedy: meat, experience and the Mer-kin begsign;
-  2. balanced: meat, experience, HP and damage reduction;
+  1. greedy: meat drop and item drop, each weighted by what it's worth in that zone, plus experience. The Mer-kin begsign is added only where meat matters more than items;
+  2. balanced: the same drop weights at half strength, plus experience, HP and damage reduction;
   3. defensive (`autosea_defensiveMaximize`, default `2 hp, 6 dr, 2 moxie`).
 
-  Pearl zones add the zone's resistance (up to 18) to every profile, and your aquamariner's necklace and ring are always worn, for Better Diver. The choice is made again every 10 adventures, so it moves back to greedy gear as you get stronger. A saved `autosea_farmOutfit` replaces all of this.
+  The drop weights come from the zone's monsters: their base meat, and what each extra 1% of item drop adds in drop value at mall prices. Every sea zone has a pressure penalty on meat and item drop (−75% in the Briniest Deepests, −100% in the Corral). Autosea tells KoLmafia which zone it's dressing for, so the maximizer counts that penalty and the "better diver" gear that offsets it (such as the aquamariner's necklace and ring). Pearl zones add the zone's resistance (up to 18) to every profile. The choice is made again every 10 adventures, so it moves back to greedy gear as you get stronger. A saved `autosea_farmOutfit` replaces all of this.
 - **Familiar:** `autosea_farmFamiliar` (default Grouper Groupie, if you have it).
 - **Organs left open:** farm mode doesn't fill your stomach, liver or spleen up front, so later quest steps still have room. Sushi is eaten only when Fishy runs out, and 2 fullness is held back while the worktea clue is pending. `autosea_farmFillStomach = true` fills the stomach with sushi first. `autosea_farmPrep = veracity` runs Veracity's daily setup, but only once all organs are full.
 - **Mad Tea Party:** once a day, buys a DRINK ME potion (about 2,000 meat) and takes the hat buff for `autosea_teaPartyHat` (default 22, Dances with Tweedles: +40% Meat from Monsters; 0 to skip). It uses no organ space.
 - **Buffs:** before each adventure, recasts meat and experience buffs from your own skills that have run out. It never uses consumables for this.
 - **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
 - **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
+- **Dolphins:** underwater, a dolphin can snatch a drop you just missed. Only the last stolen item can be recovered. Whenever the stolen item is worth more than a dolphin whistle plus a turn in that zone (a sea lasso is; a Mer-kin thingpouch isn't), autosea uses a whistle at once and fights the thief, an easy fight on the surface. It uses whistles you own, or buys one from Big Brother for a sand dollar. Owned whistles count at their mall price (about 320). `autosea_chaseDolphins = false` turns this off.
+- **Fishbreath (off by default):** the Briniest Deepests' best drops (temporary teardrop tattoo, shark cartilage, eel battery) only drop while you have Fishbreath, from bazookafish bubble gum (about 100 meat for 5 turns). It also makes every monster there flip out, with double attack and defence, which the survival check can't see. `autosea_fishbreath = true` keeps it up in the Briniest Deepests while it pays for itself. It stops for the day after a fight lost with Fishbreath.
 - **Stops:** at the turn count, your adventure reserve, being Beaten Up, or running out of Fishy. It then reports meat and stats per turn.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `autosea_farmGoal` | `both` | `both`, `meat` or `stats` |
+| `autosea_dropWeight` | 1 | Scales the meat and item drop weights (one maximizer point is about one meat a turn) |
+| `autosea_chaseDolphins` | `true` | Whistle back stolen items worth more than a whistle and a turn |
+| `autosea_fishbreath` | `false` | Keep Fishbreath up in the Briniest Deepests for its extra drops (riskier fights) |
+| `autosea_fishbreathMaxPrice` | 500 | Most to pay for a bazookafish bubble gum |
 | `autosea_farmPrep` | `none` | `veracity` runs Veracity's daily setup first, but only once stomach, liver and spleen are full |
 | `autosea_teaPartyHat` | 22 | Mad Tea Party hat length (22 = +40% Meat from Monsters; 0 to skip) |
 | `autosea_farmMaximize` | `meat, 1.5 mainstat, 0.5 hp, 2 dr` | Maximizer terms added after `sea` |
@@ -146,7 +157,7 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 
 Autosea pays for a buff only while **all the paid buffs running, added together, cost less per turn than a turn earns in the zone you're about to adventure in**.
 
-- **What a turn earns:** autosea records the meat each adventure brings in, per zone, as a running average (`autosea_turnValue_<zone id>`). While a pearl is in progress, the pearl's value divided by the fights still needed is added on top. A zone with no record yet counts as `autosea_defaultTurnValue` (400).
+- **What a turn earns:** autosea records what each adventure brings in, per zone, as a running average (`autosea_zoneValue_<zone id>`): meat plus the mall value of the items dropped, including any recovered from a dolphin (less the whistle). While a pearl is in progress, the pearl's value divided by the fights still needed is added on top. A zone with no record yet counts as `autosea_defaultTurnValue` (400).
 - **What a buff costs per turn:** (meat price + turns spent getting it × what a turn earns) ÷ the turns it actually helps. Items you already own count at their mall price, since you could sell them instead.
 - **The turns a buff actually helps** can be fewer than its duration:
   - Without Fishy, each sea adventure uses 2 turns, so a buff lasts half as many adventures.
@@ -154,7 +165,7 @@ Autosea pays for a buff only while **all the paid buffs running, added together,
   - A pearl resistance potion only helps until the pearl drops, so it's capped at the fights still needed.
   - Any turns spent getting the buff come off its useful turns.
 - **The Mad Tea Party** takes no turn, and its buff lasts 30.
-- **Covered:** the lustrous oyster egg, the Tea Party, and the pearl resistance potions.
+- **Covered:** the lustrous oyster egg, the Tea Party, the pearl resistance potions and bazookafish bubble gum.
 - **Fishy:** sea jelly counts towards the total, but it's judged against a whole turn, since Fishy saves one on every sea adventure.
 - **Spending adventures:** food, drink and spleen items are bought or used only if they cost less per adventure than your last farm zone earns a turn. That's why voodoo snuff (about 2,600 a turn at mall price) stays in your inventory.
 

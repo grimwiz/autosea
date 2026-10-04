@@ -150,6 +150,7 @@ AS_PAID_SOURCES[3] = $item[Ancient Protector Soda];
 AS_PAID_SOURCES[4] = $item[pec oil];
 AS_PAID_SOURCES[5] = $item[programmable turtle];
 AS_PAID_SOURCES[6] = $item[Polysniff Perfume];
+AS_PAID_SOURCES[7] = $item[bazookafish bubble gum];
 
 int as_committedCost(location loc)
 {

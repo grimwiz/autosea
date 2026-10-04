@@ -398,19 +398,25 @@ string as_defensiveTerms()
 }
 
 // ---------------------------------------------------------------- what a turn earns, per zone
-// A running average (weight 0.2 for the newest) of the meat each adventure in a zone actually earned,
-// kept in autosea_turnValue_<location id>. Paid buffs are only worth it while they cost less than this.
+// A running average (weight 0.2 for the newest) of what each adventure in a zone actually brought in: meat plus
+// the mall value of the items it dropped. Kept in autosea_zoneValue_<location id>. Paid buffs are only worth it
+// while they cost less than this, and farm mode prefers the zone where it's highest.
 int as_turnValue(location loc)
 {
-	string v = get_property("autosea_turnValue_" + loc.to_int());
+	string v = get_property("autosea_zoneValue_" + loc.to_int());
 	return v == "" ? as_setting("defaultTurnValue", "400").to_int() : v.to_int();
 }
 
-void as_recordTurn(location loc, int meat)
+boolean as_turnValueKnown(location loc)
 {
-	string v = get_property("autosea_turnValue_" + loc.to_int());
-	int updated = v == "" ? meat : round(0.8 * v.to_float() + 0.2 * meat);
-	set_property("autosea_turnValue_" + loc.to_int(), updated);
+	return get_property("autosea_zoneValue_" + loc.to_int()) != "";
+}
+
+void as_recordTurn(location loc, int value)
+{
+	string v = get_property("autosea_zoneValue_" + loc.to_int());
+	int updated = v == "" ? value : round(0.8 * v.to_float() + 0.2 * value);
+	set_property("autosea_zoneValue_" + loc.to_int(), updated);
 	set_property("autosea_lastFarmZone", loc.to_string());
 }
 
@@ -421,6 +427,159 @@ int as_bestTurnValue()
 	return last == "" ? as_setting("defaultTurnValue", "400").to_int() : as_turnValue(last.to_location());
 }
 
+// ---------------------------------------------------------------- what a zone's drops are worth
+// Each sea zone has a pressure penalty on item and meat drops (-25% in the Briny Deeps to -200% in the Trench),
+// reduced by "better diver" gear. KoLmafia models both, but only for the zone it thinks you're in, so set the
+// location before choosing gear.
+
+int as_dropValue(item it)
+{
+	if(it.tradeable)
+	{
+		int price = mall_price(it);
+		if(price > 0)
+		{
+			return price;
+		}
+	}
+	return max(0, autosell_price(it));
+}
+
+// conditional drops autosea knows how to switch on
+boolean as_dropApplies(item it, string type, location loc)
+{
+	if(type.contains_text("p") || type == "0")
+	{
+		return false;	//pickpocket only, or unknown rate
+	}
+	if(!type.contains_text("c"))
+	{
+		return true;
+	}
+	switch(it)
+	{
+		case $item[temporary teardrop tattoo]:
+		case $item[shark cartilage]:
+		case $item[eel battery]:
+			//only while you have Fishbreath
+			return have_effect($effect[Fishbreath]) > 0
+				|| (loc == $location[The Briniest Deepests] && as_setting("fishbreath", "false").to_boolean()
+					&& !get_property("_autosea_fishbreathLost").to_boolean());
+		case $item[eel sauce]:
+			return get_property("grandpaUnlockedEelSauce").to_boolean();
+		case $item[shark jumper]:
+			return true;	//turns up in your logs without any special setup
+	}
+	return false;
+}
+
+// how often each monster turns up in the zone (combats only), summing to 1
+float[monster] as_zoneMonsters(location loc)
+{
+	float[monster] weights;
+	float total = 0;
+	foreach m, rate in appearance_rates(loc)
+	{
+		if(m != $monster[none] && rate > 0)
+		{
+			weights[m] = rate;
+			total += rate;
+		}
+	}
+	foreach m in weights
+	{
+		weights[m] = weights[m] / total;
+	}
+	return weights;
+}
+
+// expected mall value of a fight's item drops at a net item drop bonus (in %, after the pressure penalty)
+float as_zoneItemValue(location loc, float itemBonus)
+{
+	float value = 0;
+	foreach m, w in as_zoneMonsters(loc)
+	{
+		foreach i, d in item_drops_array(m)
+		{
+			if(d.rate <= 0 || !as_dropApplies(d.drop, d.type, loc))
+			{
+				continue;
+			}
+			float chance = d.type.contains_text("f") ? d.rate / 100 : min(1.0, d.rate / 100 * max(0.0, 1 + itemBonus / 100));
+			value += w * chance * as_dropValue(d.drop);
+		}
+	}
+	return value;
+}
+
+// meat a turn each 1% of item drop is worth here (drops already at 100% don't count)
+float as_zoneItemSlope(location loc, float itemBonus)
+{
+	return as_zoneItemValue(loc, itemBonus + 1) - as_zoneItemValue(loc, itemBonus);
+}
+
+// average base meat a fight drops here, before any meat drop bonus
+float as_zoneBaseMeat(location loc)
+{
+	float meat = 0;
+	foreach m, w in as_zoneMonsters(loc)
+	{
+		meat += w * meat_drop(m);
+	}
+	return meat;
+}
+
+// the zone's pressure penalty after your current "better diver" gear (0 or less)
+float as_zonePenalty(location loc)
+{
+	float penalty = numeric_modifier("Loc:" + loc, "Item Drop Penalty");
+	return min(0.0, penalty + numeric_modifier("Better Diver"));
+}
+
+// a rough estimate of a turn's value in a zone you haven't farmed yet, with the gear you have on now
+int as_zoneEstimate(location loc)
+{
+	float netItem = numeric_modifier("Item Drop") + as_zonePenalty(loc);
+	float netMeat = numeric_modifier("Meat Drop") + as_zonePenalty(loc);
+	return round(as_zoneBaseMeat(loc) * max(0.0, 1 + netMeat / 100) + as_zoneItemValue(loc, netItem));
+}
+
+// maximizer terms weighting meat and item drop by what each is worth in this zone. One maximizer point
+// is roughly one meat a turn, scaled by autosea_dropWeight.
+string as_dropTerms(location loc, float scale)
+{
+	scale *= as_setting("dropWeight", "1").to_float();
+	float netItem = numeric_modifier("Item Drop") + as_zonePenalty(loc);
+	float meatWeight = as_zoneBaseMeat(loc) / 100 * scale;
+	float itemWeight = as_zoneItemSlope(loc, netItem) * scale;
+	string terms = "";
+	if(meatWeight >= 0.1)
+	{
+		terms += to_string(meatWeight, "%.1f") + " meat";
+	}
+	if(itemWeight >= 0.1)
+	{
+		terms += (terms == "" ? "" : ", ") + to_string(itemWeight, "%.1f") + " item";
+	}
+	return terms;
+}
+
+// the items a fight here can drop, to count what an adventure brought in
+boolean[item] as_zoneDrops(location loc)
+{
+	boolean[item] drops;
+	foreach m in as_zoneMonsters(loc)
+	{
+		foreach i, d in item_drops_array(m)
+		{
+			drops[d.drop] = true;
+		}
+	}
+	return drops;
+}
+
+location as_dolphinZone;	//set when a dolphin steals an item, to the zone it was stolen in
+
 // one adventure in a sea zone. Returns false (and says why) if it could not adventure.
 // filter: name of a combat filter function, or "" to leave combat entirely to your own combat settings.
 boolean as_adv(location loc, string extraMaximize, string filter)
@@ -430,6 +589,7 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		as_warn("Not enough adventures left (reserve " + as_advReserve() + ").");
 		return false;
 	}
+	set_location(loc);	//so gear is judged against this zone's pressure penalty
 	if(!as_equipForSea(extraMaximize))
 	{
 		as_warn("Can't breathe underwater (you or your familiar) for " + loc + ". Get a fishbowl, helmet or similar first.");
@@ -457,11 +617,26 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 	string before = as_progressMarker();
 	int meatBefore = my_meat();
 	int turnsBefore = my_turncount();
+	int[item] itemsBefore;
+	foreach it in as_zoneDrops(loc)
+	{
+		itemsBefore[it] = item_amount(it);
+	}
+	string dolphinBefore = get_property("dolphinItem");
 	if(adv1(loc, -1, filter))
 	{
 		if(my_turncount() > turnsBefore)
 		{
-			as_recordTurn(loc, (my_meat() - meatBefore) / (my_turncount() - turnsBefore));
+			int value = my_meat() - meatBefore;
+			foreach it, n in itemsBefore
+			{
+				value += max(0, item_amount(it) - n) * as_dropValue(it);
+			}
+			as_recordTurn(loc, value / (my_turncount() - turnsBefore));
+		}
+		if(get_property("dolphinItem") != "" && get_property("dolphinItem") != dolphinBefore)
+		{
+			as_dolphinZone = loc;	//a dolphin just stole something here: the caller decides whether to chase it
 		}
 		return true;
 	}

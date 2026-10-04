@@ -377,7 +377,74 @@ void as_applyBoosts(string expr)
 }
 
 // one adventure in a sea zone, with Fishy and the right gear
-boolean as_seaAdv(location loc, string extraMaximize, string filter)
+// ---------------------------------------------------------------- dolphins
+// Underwater, a dolphin can snatch a drop you just missed. A dolphin whistle (1 sand dollar from Big Brother)
+// summons the thief, an easy fight on the surface that gives the item back, but costs an adventure. Only the
+// last stolen item can be recovered, so chase straight away or not at all. Worth it when the item is worth
+// more than the whistle plus the turn it takes (what a turn in the zone earns).
+int as_whistleCost()
+{
+	//owned whistles count at mall value (they could be sold); otherwise a sand dollar, or a mall whistle
+	int mall = mall_price($item[dolphin whistle]);
+	if(item_amount($item[dolphin whistle]) > 0 || closet_amount($item[dolphin whistle]) > 0)
+	{
+		return mall > 0 ? mall : 300;
+	}
+	int dollar = mall_price($item[sand dollar]);
+	return min(mall > 0 ? mall : 999999, dollar > 0 ? dollar : 300);
+}
+
+boolean as_chaseDolphin(location loc)
+{
+	item stolen = get_property("dolphinItem").to_item();
+	if(stolen == $item[none] || !as_setting("chaseDolphins", "true").to_boolean())
+	{
+		return false;
+	}
+	int value = as_dropValue(stolen);
+	int cost = as_whistleCost() + as_zoneWorth(loc);
+	if(value <= cost)
+	{
+		as_debug("A dolphin has your " + stolen + " (" + value + " meat): not worth a whistle and a turn (" + cost + ").");
+		return false;
+	}
+	if(my_inebriety() > inebriety_limit() || !as_haveAdventures())
+	{
+		return false;
+	}
+	if(!as_fetch(1, $item[dolphin whistle]) && !as_buyFromBigBrother($item[dolphin whistle], 1)
+		&& !(mall_price($item[dolphin whistle]) <= 1000 && as_acquire(1, $item[dolphin whistle])))
+	{
+		as_warn("A dolphin stole your " + stolen + " (" + value + " meat), but there's no dolphin whistle to get it back.");
+		return false;
+	}
+	as_recover();
+	as_info("A dolphin stole your " + stolen + " (about " + value + " meat). Whistling it back.");
+	int before = item_amount(stolen);
+	int meatBefore = my_meat();
+	use(1, $item[dolphin whistle]);
+	if(item_amount(stolen) > before)
+	{
+		//count the recovery as a turn in the zone it came from
+		as_recordTurn(loc, value - as_whistleCost() + my_meat() - meatBefore);
+		return true;
+	}
+	as_warn("The dolphin fight didn't return the " + stolen + ".");
+	return false;
+}
+
+// after an adventure: chase a dolphin that stole something there
+void as_afterSeaAdv()
+{
+	if(as_dolphinZone != $location[none])
+	{
+		location loc = as_dolphinZone;
+		as_dolphinZone = $location[none];
+		as_chaseDolphin(loc);
+	}
+}
+
+boolean as_seaAdvOnce(location loc, string extraMaximize, string filter)
 {
 	as_dietSpleen();
 	as_dietTopUp();
@@ -389,6 +456,7 @@ boolean as_seaAdv(location loc, string extraMaximize, string filter)
 	//pearl zones: push the zone's element resistance towards 18 before fighting
 	if(as_pearlAvailable(loc))
 	{
+		set_location(loc);
 		string gear = extraMaximize + (extraMaximize == "" ? "" : ", ") + as_pearlGear(loc);
 		if(!as_equipForSea(gear))
 		{
@@ -398,6 +466,13 @@ boolean as_seaAdv(location loc, string extraMaximize, string filter)
 		return as_adv(loc, "", filter);	//gear is on; don't re-maximize it away
 	}
 	return as_adv(loc, extraMaximize, filter);
+}
+
+boolean as_seaAdv(location loc, string extraMaximize, string filter)
+{
+	boolean ok = as_seaAdvOnce(loc, extraMaximize, filter);
+	as_afterSeaAdv();
+	return ok;
 }
 
 boolean as_seaAdv(location loc, string extraMaximize)
