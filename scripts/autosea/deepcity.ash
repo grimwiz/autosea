@@ -6,6 +6,8 @@
 
 import <autosea/tasks.ash>
 
+boolean as_libraryCluesDone();	//defined with the Library stage below
+
 boolean as_deepcityOpen()
 {
 	return get_property("seahorseName") != "" && get_property("merkinQuestPath") != "done";
