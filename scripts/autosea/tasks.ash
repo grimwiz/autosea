@@ -88,13 +88,19 @@ boolean as_acquire(int qty, item it)
 	}
 	if(!as_buyingAllowed())
 	{
+		as_warn("Need " + it + " but buying is off" + (can_interact() ? " (autosea_buy)." : " (no mall access yet)."));
 		return false;
 	}
 	int missing = qty - item_amount(it);
 	int price = mall_price(it);
-	if(price <= 0 || price > as_maxPrice())
+	if(price <= 0)
 	{
-		as_debug("not buying " + it + " at " + price);
+		as_warn("Need " + it + " but KoLmafia found no mall price for it.");
+		return false;
+	}
+	if(price > as_maxPrice())
+	{
+		as_warn("Need " + it + " but it costs about " + price + ", over autosea_maxPrice (" + as_maxPrice() + ").");
 		return false;
 	}
 	as_info("Buying " + missing + " " + it + " (about " + price + " each).");
@@ -369,12 +375,19 @@ boolean as_sushiMat()
 	return true;
 }
 
+boolean as_helmetTried = false;
+
 boolean as_helmet()
 {
-	if(!as_wantHelmet() || available_amount($item[aerated diving helmet]) > 0 || item_amount($item[bubblin' stone]) == 0)
+	if(as_helmetTried || !as_wantHelmet() || available_amount($item[aerated diving helmet]) > 0)
 	{
 		return false;
 	}
+	if(!as_fetch(1, $item[bubblin' stone]))
+	{
+		return false;	//comes from Big Brother on his first visit
+	}
+	as_helmetTried = true;	//one attempt per run, so a missing purchase doesn't repeat every turn
 	if(!as_acquire(1, $item[rusty diving helmet]))
 	{
 		return false;
