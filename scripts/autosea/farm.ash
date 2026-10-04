@@ -12,6 +12,12 @@ record as_farmZone
 	int minLevel;
 };
 
+// "meat", "stats" or "both" (default)
+string as_farmGoal()
+{
+	return as_setting("farmGoal", "both");
+}
+
 as_farmZone[int] as_farmLadder()
 {
 	as_farmZone[int] ladder;
@@ -40,11 +46,18 @@ as_farmZone[int] as_farmLadder()
 			add(loc, 13);
 		}
 	}
-	if(as_setting("farmGoal", "meat") == "stats")
+	string goal = as_farmGoal();
+	if(goal == "stats")
 	{
 		//best stats per turn while still earning ~200-280 meat
 		add($location[The Coral Corral], 16);
 		add($location[The Mer-Kin Outpost], 16);
+	}
+	else if(goal == "both")
+	{
+		//the Briniest Deepests: top meat and ~138 stats a fight; the Corral: ~218 stats with decent meat
+		add($location[The Briniest Deepests], 16);
+		add($location[The Coral Corral], 16);
 	}
 	else
 	{
@@ -103,6 +116,10 @@ boolean as_farmEquipFor(location loc)
 string as_farmGear()
 {
 	string gear = as_setting("farmMaximize", "meat, 1.5 mainstat, 0.5 hp, 2 dr");
+	if(as_farmGoal() != "meat" && !gear.contains_text("exp"))
+	{
+		gear += ", 2 exp";	//more stats per fight
+	}
 	//Better Diver and meat drop; the maximizer doesn't value Better Diver on its own
 	foreach it in $items[aquamariner's necklace, aquamariner's ring]
 	{
@@ -112,7 +129,7 @@ string as_farmGear()
 		}
 	}
 	//Mer-kin begsign: +40% Meat Drop underwater, off-hand, usually ~100 meat in the mall
-	if(as_setting("farmGoal", "meat") != "stats" && (available_amount($item[Mer-kin begsign]) > 0 || as_acquire(1, $item[Mer-kin begsign]))
+	if(as_farmGoal() != "stats" && (available_amount($item[Mer-kin begsign]) > 0 || as_acquire(1, $item[Mer-kin begsign]))
 		&& can_equip($item[Mer-kin begsign]))
 	{
 		gear += ", +equip Mer-kin begsign";
@@ -139,6 +156,46 @@ void as_farmDailies()
 }
 
 // turnsLeft: turns remaining in this farm session; a pearl zone is only started if its pearl fits
+// Daily setup from Veracity's meat farm ("nofarm": its daily tasks, buffs and lounge raids, no farming).
+// Only with stomach, liver and spleen full: otherwise its diet step tries to buy food and can loop.
+void as_farmPrep()
+{
+	if(as_setting("farmPrep", "veracity") != "veracity" || get_property("_autosea_vmfPrep").to_boolean())
+	{
+		return;
+	}
+	if(my_fullness() < fullness_limit() || my_inebriety() < inebriety_limit() || my_spleen_use() < spleen_limit())
+	{
+		as_warn("Skipping Veracity's daily setup: fill your stomach, liver and spleen first (its diet step can loop otherwise).");
+		return;
+	}
+	as_info("Running Veracity's daily setup (VeracityMeatFarm nofarm) for its buffs.");
+	set_property("_autosea_vmfPrep", "true");
+	if(!cli_execute("call scripts/VeracityMeatFarm.ash nofarm"))
+	{
+		as_warn("Veracity's daily setup didn't complete (is VeracityMeatFarm.ash installed?). Farming without it.");
+	}
+}
+
+// keep meat and experience buffs from your own skills running (never consumables)
+void as_farmBuffs()
+{
+	string expr = as_farmGoal() == "stats" ? "exp" : as_farmGoal() == "both" ? "meat drop, 0.5 exp" : "meat drop";
+	foreach i, entry in maximize(expr, 0, 0, true, false)
+	{
+		if(entry.score <= 0 || entry.skill == $skill[none] || !have_skill(entry.skill) || entry.command == "")
+		{
+			continue;
+		}
+		if(entry.display.index_of("<font color=gray>") != -1 || my_mp() < mp_cost(entry.skill) + 50)
+		{
+			continue;
+		}
+		as_debug("buff: " + entry.command);
+		cli_execute(entry.command);
+	}
+}
+
 location as_pickFarmZone(int turnsLeft)
 {
 	int budget = min(turnsLeft, my_adventures() - as_advReserve());
@@ -177,6 +234,7 @@ void as_farm(int turns)
 	int startSubs = as_totalSubstats();
 	boolean requireFishy = as_setting("farmRequireFishy", "true").to_boolean();
 
+	as_farmPrep();
 	as_farmFamiliar();
 	as_farmDailies();
 	location zone = $location[none];
@@ -203,6 +261,7 @@ void as_farm(int turns)
 			zone = next;
 			sincePick = 0;
 		}
+		as_farmBuffs();
 		as_ensureFishy();
 		if(requireFishy && !as_isFishy())
 		{

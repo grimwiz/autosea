@@ -86,17 +86,20 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 
 `autosea farm` is for aftercore. Underwater, with the same buffs, monsters drop about as much meat as the Hidden Office Building and give 2–4 times the stats, provided Fishy keeps every adventure at 1 turn.
 
-- **Zone:** the best-paying sea zone that passes the survival check, re-checked every 10 adventures so it moves deeper as you level. For meat (the default) that's the Briniest Deepests from level 16, otherwise the Briny Deeps. With `autosea_farmGoal = stats` it's the Coral Corral or Mer-Kin Outpost from level 16, otherwise the Briny Deeps. The Brinier Deepers (trophyfish) and the Wreck (mine crabs) are never farmed.
+- **Zone:** the best sea zone that passes the survival check, re-checked every 10 adventures so it moves deeper as you level. `autosea_farmGoal` picks the order: `both` (the default: the Briniest Deepests, then the Coral Corral from level 16), `meat` (the Briniest Deepests from level 16) or `stats` (the Coral Corral or Mer-Kin Outpost from level 16). The Briny Deeps is the fallback for all three. The Brinier Deepers (trophyfish) and the Wreck (mine crabs) are never farmed.
 - **Fishy:** kept up before every adventure. By default it stops rather than pay 2 adventures a turn.
 - **Gear:** `sea` plus `autosea_farmMaximize` (default `meat, 1.5 mainstat, 0.5 hp, 2 dr`), and the aquamariner's necklace and ring if you own them, for Better Diver.
 - **Familiar:** `autosea_farmFamiliar` (default Grouper Groupie, if you have it).
+- **Daily setup:** once a day, runs Veracity's meat farm in `nofarm` mode (its daily tasks, meat buffs and clan lounge raids, without its farming loop), but only when your stomach, liver and spleen are full, because its diet step can otherwise loop. Set `autosea_farmPrep = none` to skip it.
+- **Buffs:** before each adventure, recasts meat and experience buffs from your own skills that have run out. It never uses consumables for this.
 - **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
 - **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
 - **Stops:** at the turn count, your adventure reserve, being Beaten Up, or running out of Fishy. It then reports meat and stats per turn.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `autosea_farmGoal` | `meat` | `meat` or `stats` |
+| `autosea_farmGoal` | `both` | `both`, `meat` or `stats` |
+| `autosea_farmPrep` | `veracity` | Run Veracity's daily setup first (`none` to skip) |
 | `autosea_farmMaximize` | `meat, 1.5 mainstat, 0.5 hp, 2 dr` | Maximizer terms added after `sea` |
 | `autosea_farmOutfit` | (none) | A saved outfit to farm in instead of maximizing, e.g. one with breathing, HP regeneration and resistances for the tougher zones. Autosea still adds familiar breathing if the outfit lacks it |
 | `autosea_farmFamiliar` | Grouper Groupie | Familiar to farm with |
