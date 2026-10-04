@@ -134,6 +134,7 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 - **Buffs:** before each adventure, recasts meat and experience buffs from your own skills that have run out. It never uses consumables for this.
 - **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
 - **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
+- **Tracking the valuable monster:** in each farm zone, autosea works out what each monster is worth with your gear on (meat plus drops at mall prices). When one is worth clearly more than an average fight there (`autosea_trackMargin`, 1.3 times, and at least 100 meat more), it tracks that monster. It uses Transcendent Olfaction (3 a day; the trail lasts until replaced, so a leftover from your last ascension gets replaced) and Gallapagosian Mating Call if you have it. In the Coral Corral that's the sea cowboy, for sea lassos. `autosea_track = false` turns this off.
 - **Dolphins:** underwater, a dolphin can snatch a drop you just missed. Only the last stolen item can be recovered. Whenever the stolen item is worth more than a dolphin whistle plus a turn in that zone (a sea lasso is; a Mer-kin thingpouch isn't), autosea uses a whistle at once and fights the thief, an easy fight on the surface. It uses whistles you own, or buys one from Big Brother for a sand dollar. Owned whistles count at their mall price (about 320). `autosea_chaseDolphins = false` turns this off.
 - **Fishbreath (off by default):** the Briniest Deepests' best drops (temporary teardrop tattoo, shark cartilage, eel battery) only drop while you have Fishbreath, from bazookafish bubble gum (about 100 meat for 5 turns). It also makes every monster there flip out, with double attack and defence, which the survival check can't see. `autosea_fishbreath = true` keeps it up in the Briniest Deepests while it pays for itself. It stops for the day after a fight lost with Fishbreath.
 - **Stops:** at the turn count, your adventure reserve, being Beaten Up, or running out of Fishy. It then reports meat and stats per turn.
@@ -142,6 +143,8 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 | --- | --- | --- |
 | `autosea_farmGoal` | `both` | `both`, `meat` or `stats` |
 | `autosea_dropWeight` | 1 | Scales the meat and item drop weights (one maximizer point is about one meat a turn) |
+| `autosea_track` | `true` | Olfact (and Mating Call) the farm zone's most valuable monster |
+| `autosea_trackMargin` | 1.3 | How much more than an average fight a monster must be worth to track it |
 | `autosea_chaseDolphins` | `true` | Whistle back stolen items worth more than a whistle and a turn |
 | `autosea_fishbreath` | `false` | Keep Fishbreath up in the Briniest Deepests for its extra drops (riskier fights) |
 | `autosea_fishbreathMaxPrice` | 500 | Most to pay for a bazookafish bubble gum |

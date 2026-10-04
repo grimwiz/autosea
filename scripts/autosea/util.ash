@@ -493,21 +493,29 @@ float[monster] as_zoneMonsters(location loc)
 	return weights;
 }
 
-// expected mall value of a fight's item drops at a net item drop bonus (in %, after the pressure penalty)
+// expected mall value of one monster's item drops at a net item drop bonus (in %, after the pressure penalty)
+float as_monsterItemValue(monster m, location loc, float itemBonus)
+{
+	float value = 0;
+	foreach i, d in item_drops_array(m)
+	{
+		if(d.rate <= 0 || !as_dropApplies(d.drop, d.type, loc))
+		{
+			continue;
+		}
+		float chance = d.type.contains_text("f") ? d.rate / 100 : min(1.0, d.rate / 100 * max(0.0, 1 + itemBonus / 100));
+		value += chance * as_dropValue(d.drop);
+	}
+	return value;
+}
+
+// the same for a fight in the zone, averaged over its monsters
 float as_zoneItemValue(location loc, float itemBonus)
 {
 	float value = 0;
 	foreach m, w in as_zoneMonsters(loc)
 	{
-		foreach i, d in item_drops_array(m)
-		{
-			if(d.rate <= 0 || !as_dropApplies(d.drop, d.type, loc))
-			{
-				continue;
-			}
-			float chance = d.type.contains_text("f") ? d.rate / 100 : min(1.0, d.rate / 100 * max(0.0, 1 + itemBonus / 100));
-			value += w * chance * as_dropValue(d.drop);
-		}
+		value += w * as_monsterItemValue(m, loc, itemBonus);
 	}
 	return value;
 }
@@ -534,6 +542,38 @@ float as_zonePenalty(location loc)
 {
 	float penalty = numeric_modifier("Loc:" + loc, "Item Drop Penalty");
 	return min(0.0, penalty + numeric_modifier("Better Diver"));
+}
+
+// what fighting one monster here is worth with the gear you have on now: meat plus drops
+float as_monsterValue(monster m, location loc)
+{
+	float netItem = numeric_modifier("Item Drop") + as_zonePenalty(loc);
+	float netMeat = numeric_modifier("Meat Drop") + as_zonePenalty(loc);
+	return meat_drop(m) * max(0.0, 1 + netMeat / 100) + as_monsterItemValue(m, loc, netItem);
+}
+
+// The monster worth tracking (olfaction and similar) in this zone: the one worth clearly more than an average
+// fight here, by autosea_trackMargin (default 1.3 times) and at least 100 meat. $monster[none] if none stands out.
+monster as_trackTarget(location loc)
+{
+	monster best = $monster[none];
+	float bestValue = 0;
+	float average = 0;
+	foreach m, w in as_zoneMonsters(loc)
+	{
+		float v = as_monsterValue(m, loc);
+		average += w * v;
+		if(v > bestValue)
+		{
+			best = m;
+			bestValue = v;
+		}
+	}
+	if(best == $monster[none] || bestValue < average * as_setting("trackMargin", "1.3").to_float() || bestValue - average < 100)
+	{
+		return $monster[none];
+	}
+	return best;
 }
 
 // a rough estimate of a turn's value in a zone you haven't farmed yet, with the gear you have on now
