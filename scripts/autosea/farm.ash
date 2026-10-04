@@ -156,6 +156,34 @@ void as_farmDailies()
 }
 
 // turnsLeft: turns remaining in this farm session; a pearl zone is only started if its pearl fits
+// Fill the stomach with sushi before farming: each beefy maki is 3 fullness, 7-12 adventures and 45 turns of Fishy
+// (Fishy stacks), so a full stomach keeps a whole day of sea adventures at 1 turn each. Doing this first also
+// means Veracity's daily setup finds the stomach full and leaves the food alone.
+void as_farmDiet()
+{
+	if(!as_setting("farmFillStomach", "true").to_boolean() || !as_setting("eatSushi", "true").to_boolean() || !as_sushiMatInstalled())
+	{
+		return;
+	}
+	while(fullness_limit() - my_fullness() >= 2)
+	{
+		int before = my_fullness();
+		boolean maki = fullness_limit() - my_fullness() >= 3;
+		item fish = $item[beefy fish meat];
+		if(!as_acquire(1, fish) || !as_acquire(1, $item[white rice]) || (maki && !as_acquire(1, $item[seaweed])))
+		{
+			as_warn("Couldn't get sushi ingredients; leaving " + (fullness_limit() - my_fullness()) + " fullness free.");
+			return;
+		}
+		cli_execute("create 1 " + (maki ? "beefy maki" : "beefy nigiri"));
+		if(my_fullness() == before)
+		{
+			as_warn("Sushi didn't get eaten; stopping the diet step.");
+			return;
+		}
+	}
+}
+
 // Daily setup from Veracity's meat farm ("nofarm": its daily tasks, buffs and lounge raids, no farming).
 // Only with stomach, liver and spleen full: otherwise its diet step tries to buy food and can loop.
 void as_farmPrep()
@@ -166,7 +194,8 @@ void as_farmPrep()
 	}
 	if(my_fullness() < fullness_limit() || my_inebriety() < inebriety_limit() || my_spleen_use() < spleen_limit())
 	{
-		as_warn("Skipping Veracity's daily setup: fill your stomach, liver and spleen first (its diet step can loop otherwise).");
+		as_warn("Skipping Veracity's daily setup: your " + (my_fullness() < fullness_limit() ? "stomach" : my_inebriety() < inebriety_limit() ? "liver" : "spleen")
+			+ " isn't full, and its diet step would try to fill it (and can loop). Autosea fills the stomach with sushi; fill liver and spleen yourself.");
 		return;
 	}
 	as_info("Running Veracity's daily setup (VeracityMeatFarm nofarm) for its buffs.");
@@ -234,6 +263,7 @@ void as_farm(int turns)
 	int startSubs = as_totalSubstats();
 	boolean requireFishy = as_setting("farmRequireFishy", "true").to_boolean();
 
+	as_farmDiet();
 	as_farmPrep();
 	as_farmFamiliar();
 	as_farmDailies();

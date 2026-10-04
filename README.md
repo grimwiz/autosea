@@ -90,7 +90,8 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 - **Fishy:** kept up before every adventure. By default it stops rather than pay 2 adventures a turn.
 - **Gear:** `sea` plus `autosea_farmMaximize` (default `meat, 1.5 mainstat, 0.5 hp, 2 dr`), and the aquamariner's necklace and ring if you own them, for Better Diver.
 - **Familiar:** `autosea_farmFamiliar` (default Grouper Groupie, if you have it).
-- **Daily setup:** once a day, runs Veracity's meat farm in `nofarm` mode (its daily tasks, meat buffs and clan lounge raids, without its farming loop), but only when your stomach, liver and spleen are full, because its diet step can otherwise loop. Set `autosea_farmPrep = none` to skip it.
+- **Diet:** first fills your stomach with sushi: beefy maki (3 fullness, 7–12 adventures, 45 turns of Fishy each), with nigiri for the last 2 fullness. Fishy stacks, so a full stomach covers a day of farming. Ingredients are bought (about 1,250 meat a maki, mostly white rice). Set `autosea_farmFillStomach = false` to skip.
+- **Daily setup:** once a day, runs Veracity's meat farm in `nofarm` mode (its daily tasks, meat buffs and clan lounge raids, without its farming loop), but only when your stomach, liver and spleen are full. Its diet step would otherwise replace the sushi, and it can loop when it can't buy food. Fill your liver and spleen yourself. Set `autosea_farmPrep = none` to skip it.
 - **Buffs:** before each adventure, recasts meat and experience buffs from your own skills that have run out. It never uses consumables for this.
 - **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
 - **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
