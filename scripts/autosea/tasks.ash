@@ -220,6 +220,17 @@ boolean as_dietSpleen()
 	return acted;
 }
 
+// the diet as a task of its own, first in the list: it has to run even when there are too few adventures
+// left to adventure (that's exactly when food and drink are needed)
+boolean as_dietTopUp();
+
+boolean as_dietTask()
+{
+	boolean chewed = as_dietSpleen();
+	boolean consumed = as_dietTopUp();
+	return chewed || consumed;
+}
+
 // eat or drink when adventures run low; never touches the worktea fullness
 boolean as_dietTopUp()
 {
@@ -997,25 +1008,26 @@ item as_hatredItem()
 // ---------------------------------------------------------------- engine hooks
 
 string[int] AS_TASKS;
-AS_TASKS[0] = "as_oldMan";
-AS_TASKS[1] = "as_sushiMat";
-AS_TASKS[2] = "as_clownfish";
-AS_TASKS[3] = "as_littleBrother";
-AS_TASKS[4] = "as_bigBrother";
-AS_TASKS[5] = "as_fishyPipe";
-AS_TASKS[6] = "as_helmet";
-AS_TASKS[7] = "as_skatePark";
-AS_TASKS[8] = "as_grandpa";
-AS_TASKS[9] = "as_grandpaTopics";
-AS_TASKS[10] = "as_grandma";
-AS_TASKS[11] = "as_mom";
-AS_TASKS[12] = "as_seahorse";
-AS_TASKS[13] = "as_schoolGear";		//defined in deepcity.ash
-AS_TASKS[14] = "as_merkinVocab";
-AS_TASKS[15] = "as_workteaClue";
-AS_TASKS[16] = "as_merkinLibrary";
-AS_TASKS[17] = "as_readDreadscroll";
-AS_TASKS[18] = "as_yogUrt";
+AS_TASKS[0] = "as_dietTask";
+AS_TASKS[1] = "as_oldMan";
+AS_TASKS[2] = "as_sushiMat";
+AS_TASKS[3] = "as_clownfish";
+AS_TASKS[4] = "as_littleBrother";
+AS_TASKS[5] = "as_bigBrother";
+AS_TASKS[6] = "as_fishyPipe";
+AS_TASKS[7] = "as_helmet";
+AS_TASKS[8] = "as_skatePark";
+AS_TASKS[9] = "as_grandpa";
+AS_TASKS[10] = "as_grandpaTopics";
+AS_TASKS[11] = "as_grandma";
+AS_TASKS[12] = "as_mom";
+AS_TASKS[13] = "as_seahorse";
+AS_TASKS[14] = "as_schoolGear";		//defined in deepcity.ash
+AS_TASKS[15] = "as_merkinVocab";
+AS_TASKS[16] = "as_workteaClue";
+AS_TASKS[17] = "as_merkinLibrary";
+AS_TASKS[18] = "as_readDreadscroll";
+AS_TASKS[19] = "as_yogUrt";
 
 string[int] as_taskOrder()
 {
@@ -1024,7 +1036,7 @@ string[int] as_taskOrder()
 
 string as_stateSignature()
 {
-	string sig = "";
+	string sig = my_adventures() + "|" + my_fullness() + "|" + my_inebriety() + "|" + my_spleen_use() + "|";
 	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
 	{
 		sig += get_property(prop) + "|";
