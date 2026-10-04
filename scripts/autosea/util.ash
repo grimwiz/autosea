@@ -95,6 +95,24 @@ void as_takeOverSettings()
 	}
 	//never stop mid-run for a counter or an unexpected choice
 	as_overrideProperty("dontStopForCounters", "true");
+	//KoLmafia's recovery may otherwise sleep on the clan sofa or rest at the campground, which cost adventures
+	//(one MP top-up cost 7 turns). Free rests are kept.
+	foreach prop in $strings[hpAutoRecoveryItems, mpAutoRecoveryItems]
+	{
+		string kept = "";
+		foreach i, option in get_property(prop).split_string(";")
+		{
+			if(option == "sleep on your clan sofa" || option == "rest at your campground" || option == "")
+			{
+				continue;
+			}
+			kept += (kept == "" ? "" : ";") + option;
+		}
+		if(kept != get_property(prop))
+		{
+			as_overrideProperty(prop, kept);
+		}
+	}
 	//sea noncombats are decided by autosea's choice script, which can check MP and daily limits.
 	//It replaces your own choice script during the run (set autosea_useChoiceScript = false to keep yours).
 	if(get_property("choiceAdventureScript") == "" || as_setting("useChoiceScript", "true").to_boolean())
