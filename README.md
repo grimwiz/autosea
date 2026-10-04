@@ -142,6 +142,16 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 | `autosea_farmRequireFishy` | `true` | Stop rather than adventure without Fishy |
 | `autosea_farmMomFood` | `stats` | Mom's daily food (`none` to skip) |
 
+## Paying for buffs
+
+Autosea pays for a buff only while **all the paid buffs running, added together, cost less per turn than a turn earns in the zone you're about to adventure in**.
+
+- **What a turn earns:** autosea records the meat each adventure brings in, per zone, as a running average (`autosea_turnValue_<zone id>`). While a pearl is in progress, the pearl's value divided by the fights still needed is added on top. A zone with no record yet counts as `autosea_defaultTurnValue` (400).
+- **What a buff costs per turn:** item price divided by the effect's duration. Items you already own count at their mall price, since you could sell them instead. The DRINK ME potion for the Mad Tea Party counts over its buff's 30 turns.
+- **Covered:** the lustrous oyster egg, the Tea Party, and the pearl resistance potions.
+- **Fishy:** sea jelly counts towards the total, but it's judged against a whole turn, since Fishy saves one on every sea adventure.
+- **Spending adventures:** food, drink and spleen items are bought or used only if they cost less per adventure than your last farm zone earns a turn. That's why voodoo snuff (about 2,600 a turn at mall price) stays in your inventory.
+
 ## Diet
 
 - **Spleen right away**, since nothing waits on it. Autosea chews spleen items you own that give adventures, best adventures per spleen first. When farming for meat it adds a lustrous oyster egg (+50% Meat Drop). It never chews Instant Karma, and never anything worth more than `autosea_spleenMaxValue` (5,000) in the mall.

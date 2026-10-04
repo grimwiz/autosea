@@ -92,6 +92,64 @@ int as_pearlTurnValue(location loc)
 	return as_pearlValue() / as_pearlFightsLeft(loc);
 }
 
+// ---------------------------------------------------------------- buff economics
+// Every paid buff has a cost per turn: price / effect duration (owned items count at their mall price,
+// since they could be sold). The total of all paid buffs running must stay below what a turn in the zone
+// earns: its recorded meat per turn, plus the pearl's value per remaining fight while a pearl is in progress.
+
+int as_zoneWorth(location loc)
+{
+	return as_turnValue(loc) + (as_pearlAvailable(loc) ? as_pearlTurnValue(loc) : 0);
+}
+
+int as_costPerTurn(item it)
+{
+	int turns = numeric_modifier(it, "Effect Duration").to_int();
+	int price = it.tradeable ? max(0, mall_price(it)) : 0;
+	return turns > 0 ? price / turns : price;
+}
+
+// paid buffs autosea uses, and what their running effects cost per turn
+item[int] AS_PAID_SOURCES;
+AS_PAID_SOURCES[0] = $item[sea jelly];
+AS_PAID_SOURCES[1] = $item[lustrous oyster egg];
+AS_PAID_SOURCES[2] = $item[scroll of minor invulnerability];
+AS_PAID_SOURCES[3] = $item[Ancient Protector Soda];
+AS_PAID_SOURCES[4] = $item[pec oil];
+AS_PAID_SOURCES[5] = $item[programmable turtle];
+AS_PAID_SOURCES[6] = $item[Polysniff Perfume];
+
+int as_committedCost()
+{
+	int total = 0;
+	foreach i, it in AS_PAID_SOURCES
+	{
+		effect eff = effect_modifier(it, "Effect");
+		if(eff != $effect[none] && have_effect(eff) > 0)
+		{
+			total += as_costPerTurn(it);
+		}
+	}
+	if(have_effect($effect[Dances with Tweedles]) > 0)
+	{
+		total += get_property("_autosea_teaCostPerTurn").to_int();
+	}
+	return total;
+}
+
+// is one more paid buff (costing costPerTurn) worth it for adventuring in loc?
+boolean as_worthBuff(int costPerTurn, location loc)
+{
+	int committed = as_committedCost();
+	int worth = as_zoneWorth(loc);
+	if(committed + costPerTurn < worth)
+	{
+		return true;
+	}
+	as_debug("buff not worth it in " + loc + ": " + committed + " + " + costPerTurn + " per turn vs " + worth + " earned");
+	return false;
+}
+
 // maximizer terms that push the zone's element resistance up to the useful cap
 string as_pearlGear(location loc)
 {
@@ -115,6 +173,11 @@ void as_pearlTopUp(location loc)
 	boolean tryPotion(item it, effect eff, boolean mayBuy)
 	{
 		if(as_resistance(el) >= as_pearlTarget() || have_effect(eff) > 0)
+		{
+			return false;
+		}
+		//worth it only while all paid buffs together cost less than a fight here earns
+		if(!as_worthBuff(as_costPerTurn(it), loc))
 		{
 			return false;
 		}

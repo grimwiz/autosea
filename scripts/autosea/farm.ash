@@ -272,11 +272,20 @@ void as_farmTeaParty()
 	{
 		return;
 	}
+	//the hat buff lasts 30 turns
+	location zone = get_property("autosea_lastFarmZone").to_location();
+	int perTurn = mall_price($item[&quot;DRINK ME&quot; potion]) / 30;
+	if(item_amount($item[&quot;DRINK ME&quot; potion]) == 0 && have_effect($effect[Down the Rabbit Hole]) == 0 && !as_worthBuff(perTurn, zone))
+	{
+		as_info("Skipping the Mad Tea Party: about " + perTurn + " meat a turn, more than the buffs are worth here.");
+		return;
+	}
 	if(!as_fetch(1, $item[&quot;DRINK ME&quot; potion]) && have_effect($effect[Down the Rabbit Hole]) == 0
 		&& !as_acquire(1, $item[&quot;DRINK ME&quot; potion]))
 	{
 		return;
 	}
+	set_property("_autosea_teaCostPerTurn", perTurn);
 	as_info("Visiting the Mad Tea Party for a hat buff (hat length " + length + ").");
 	if(!cli_execute("hatter " + length))
 	{
@@ -390,7 +399,7 @@ void as_farm(int turns)
 		as_farmBuffs();
 		as_dietSpleen();
 		as_dietTopUp();
-		as_ensureFishy();
+		as_ensureFishy(zone);
 		if(requireFishy && !as_isFishy())
 		{
 			as_warn("Out of affordable Fishy; stopping rather than paying 2 adventures a turn.");

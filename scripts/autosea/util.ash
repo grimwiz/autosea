@@ -397,6 +397,30 @@ string as_defensiveTerms()
 	return as_setting("defensiveMaximize", "2 hp, 6 dr, 2 moxie");
 }
 
+// ---------------------------------------------------------------- what a turn earns, per zone
+// A running average (weight 0.2 for the newest) of the meat each adventure in a zone actually earned,
+// kept in autosea_turnValue_<location id>. Paid buffs are only worth it while they cost less than this.
+int as_turnValue(location loc)
+{
+	string v = get_property("autosea_turnValue_" + loc.to_int());
+	return v == "" ? as_setting("defaultTurnValue", "400").to_int() : v.to_int();
+}
+
+void as_recordTurn(location loc, int meat)
+{
+	string v = get_property("autosea_turnValue_" + loc.to_int());
+	int updated = v == "" ? meat : round(0.8 * v.to_float() + 0.2 * meat);
+	set_property("autosea_turnValue_" + loc.to_int(), updated);
+	set_property("autosea_lastFarmZone", loc.to_string());
+}
+
+// the best a turn is known to earn: what spending adventures (drinks, food, spleen) is measured against
+int as_bestTurnValue()
+{
+	string last = get_property("autosea_lastFarmZone");
+	return last == "" ? as_setting("defaultTurnValue", "400").to_int() : as_turnValue(last.to_location());
+}
+
 // one adventure in a sea zone. Returns false (and says why) if it could not adventure.
 // filter: name of a combat filter function, or "" to leave combat entirely to your own combat settings.
 boolean as_adv(location loc, string extraMaximize, string filter)
@@ -431,8 +455,14 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 	}
 	as_debug("adventuring at " + loc);
 	string before = as_progressMarker();
+	int meatBefore = my_meat();
+	int turnsBefore = my_turncount();
 	if(adv1(loc, -1, filter))
 	{
+		if(my_turncount() > turnsBefore)
+		{
+			as_recordTurn(loc, (my_meat() - meatBefore) / (my_turncount() - turnsBefore));
+		}
 		return true;
 	}
 	//KoLmafia stops automation on some quest encounters ("You've Hit Bottom", "Granny, Does Your Dogfish Bite?",

@@ -190,7 +190,8 @@ boolean as_dietSpleen()
 		float bestRatio = 0;
 		foreach it, n in get_inventory()
 		{
-			if(as_spleenCandidate(it, room) && as_avgAdventures(it) > 0)
+			if(as_spleenCandidate(it, room) && as_avgAdventures(it) > 0
+				&& (!it.tradeable || mall_price(it) / as_avgAdventures(it) < as_bestTurnValue()))
 			{
 				float ratio = as_avgAdventures(it) / it.spleen;
 				if(ratio > bestRatio)
@@ -200,8 +201,10 @@ boolean as_dietSpleen()
 				}
 			}
 		}
+		location zone = get_property("autosea_lastFarmZone").to_location();
 		if(best == $item[none] && as_setting("farmGoal", "both") != "stats" && room >= 1
-			&& have_effect($effect[Lustre After Wealth]) == 0 && item_amount($item[lustrous oyster egg]) > 0)
+			&& have_effect($effect[Lustre After Wealth]) == 0 && item_amount($item[lustrous oyster egg]) > 0
+			&& as_worthBuff(as_costPerTurn($item[lustrous oyster egg]), zone))
 		{
 			best = $item[lustrous oyster egg];	//+50% Meat Drop for 50 turns
 		}
@@ -238,11 +241,13 @@ boolean as_dietTopUp()
 	{
 		return false;
 	}
-	int maxPrice = as_setting("dietMaxPrice", "1000").to_int();
+	//an adventure is only worth buying for less than a turn earns
+	int maxPrice = min(as_setting("dietMaxPrice", "1000").to_int(), as_bestTurnValue() * 6);
 	//drinks first, in a batch under The Ode to Booze
 	item booze = as_setting("booze", "elemental caipiroska").to_item();
 	int batch = as_setting("boozeBatch", "5").to_int();
-	if(booze != $item[none] && booze.inebriety > 0 && inebriety_limit() - my_inebriety() >= booze.inebriety)
+	if(booze != $item[none] && booze.inebriety > 0 && inebriety_limit() - my_inebriety() >= booze.inebriety
+		&& mall_price(booze) / max(1.0, as_avgAdventures(booze) + booze.inebriety) < as_bestTurnValue())
 	{
 		int drinks = min(batch, (inebriety_limit() - my_inebriety()) / booze.inebriety);
 		if(as_fetch(drinks, booze) || (mall_price(booze) <= maxPrice && as_acquire(drinks, booze)) || item_amount(booze) > 0)
@@ -268,7 +273,7 @@ boolean as_dietTopUp()
 	//then food, keeping fullness for quest steps
 	item food = as_setting("food", "autumn-spice donut").to_item();
 	int room = fullness_limit() - my_fullness() - as_fullnessReserve();
-	if(food != $item[none] && food.fullness > 0 && room >= food.fullness)
+	if(food != $item[none] && food.fullness > 0 && room >= food.fullness && mall_price(food) / max(1.0, as_avgAdventures(food)) < as_bestTurnValue())
 	{
 		int meals = min(5, room / food.fullness);
 		if(as_fetch(meals, food) || (mall_price(food) <= maxPrice && as_acquire(meals, food)) || item_amount(food) > 0)
@@ -284,7 +289,14 @@ boolean as_dietTopUp()
 
 // ---------------------------------------------------------------- Fishy (halves the cost of sea adventures)
 
+void as_ensureFishy(location loc);
+
 void as_ensureFishy()
+{
+	as_ensureFishy(get_property("autosea_lastFarmZone").to_location());
+}
+
+void as_ensureFishy(location loc)
 {
 	if(as_isFishy())
 	{
@@ -317,7 +329,9 @@ void as_ensureFishy()
 	//sea jelly: 1 spleen for 10 Fishy turns, usually ~100 meat
 	if(as_setting("useSpleen", "true").to_boolean() && spleen_limit() - my_spleen_use() >= 1)
 	{
-		if(as_fetch(1, $item[sea jelly]) || (mall_price($item[sea jelly]) <= as_setting("fishyMaxPrice", "1000").to_int() && as_acquire(1, $item[sea jelly])))
+		//Fishy saves a whole adventure per sea turn, so it's worth up to that turn's value
+		boolean jellyWorth = as_costPerTurn($item[sea jelly]) <= as_zoneWorth(loc);
+		if(jellyWorth && (as_fetch(1, $item[sea jelly]) || (mall_price($item[sea jelly]) <= as_setting("fishyMaxPrice", "1000").to_int() && as_acquire(1, $item[sea jelly]))))
 		{
 			chew(1, $item[sea jelly]);
 			if(!as_isFishy())
@@ -367,7 +381,7 @@ boolean as_seaAdv(location loc, string extraMaximize, string filter)
 {
 	as_dietSpleen();
 	as_dietTopUp();
-	as_ensureFishy();
+	as_ensureFishy(loc);
 	if(extraMaximize.contains_text("combat"))
 	{
 		as_applyBoosts("-combat");
