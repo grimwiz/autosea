@@ -99,7 +99,8 @@ boolean as_farmEquipFor(location loc)
 	boolean ok;
 	if(as_farmOutfit() == "" && as_pearlAvailable(loc))
 	{
-		ok = as_equipForSea(as_farmGear() + ", " + as_pearlGear(loc));
+		//a pearl is worth far more per fight than meat gear adds, so dress for survival and the zone's resistance
+		ok = as_equipForSea(as_setting("pearlMaximize", "mainstat, moxie, 1 hp, 3 dr, 0.5 exp") + ", " + as_pearlGear(loc));
 	}
 	else
 	{
@@ -231,7 +232,7 @@ void as_farmBuffs()
 			continue;
 		}
 		as_debug("buff: " + entry.command);
-		cli_execute(entry.command);
+		as_runBoost(entry.command, sk);
 	}
 }
 

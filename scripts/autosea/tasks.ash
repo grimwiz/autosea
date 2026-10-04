@@ -201,10 +201,10 @@ void as_applyBoosts(string expr)
 		}
 		boolean ownSkill = entry.skill != $skill[none] && have_skill(entry.skill) && as_skillFitsLimits(entry.skill);
 		boolean ownItem = entry.item != $item[none] && item_amount(entry.item) > 0;
-		if(ownSkill || ownItem)
+		if(ownSkill || (ownItem && entry.skill == $skill[none]))
 		{
 			as_debug("boost: " + entry.command);
-			cli_execute(entry.command);
+			as_runBoost(entry.command, entry.skill);
 		}
 	}
 }

@@ -188,7 +188,7 @@ int as_activeSongs()
 	int n = 0;
 	foreach eff in my_effects()
 	{
-		if(eff.to_skill().song)
+		if(eff.song)
 		{
 			n += 1;
 		}
@@ -215,8 +215,28 @@ boolean as_boostCommandOk(string command)
 	return command.index_of("equip") < 0 && command.index_of("unequip") < 0;
 }
 
+// skills that failed this run (e.g. item-granted ones already used today): don't keep retrying them
+boolean[skill] as_failedSkills;
+
+// run a boost command; remember the skill if it fails
+void as_runBoost(string command, skill sk)
+{
+	if(!cli_execute(command) && sk != $skill[none])
+	{
+		as_failedSkills[sk] = true;
+	}
+}
+
 boolean as_skillFitsLimits(skill sk)
 {
+	if(as_failedSkills contains sk)
+	{
+		return false;
+	}
+	if(!sk.buff || adv_cost(sk) > 0)
+	{
+		return false;	//only real buffs, and never one that costs adventures (e.g. Hibernate)
+	}
 	if(sk.dailylimit > 0 && sk.timescast >= sk.dailylimit)
 	{
 		return false;	//already used up today
