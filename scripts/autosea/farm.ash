@@ -111,6 +111,12 @@ string as_farmGear()
 			gear += ", +equip " + it;
 		}
 	}
+	//Mer-kin begsign: +40% Meat Drop underwater, off-hand, usually ~100 meat in the mall
+	if(as_setting("farmGoal", "meat") != "stats" && (available_amount($item[Mer-kin begsign]) > 0 || as_acquire(1, $item[Mer-kin begsign]))
+		&& can_equip($item[Mer-kin begsign]))
+	{
+		gear += ", +equip Mer-kin begsign";
+	}
 	return gear;
 }
 
