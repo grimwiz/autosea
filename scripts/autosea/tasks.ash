@@ -79,12 +79,205 @@ boolean as_fetch(int qty, item it)
 	return item_amount(it) >= qty;
 }
 
-// make sure we hold qty of it: closet and storage first, then the mall if allowed. Returns true if we hold enough.
+// ---------------------------------------------------------------- tracking a monster
+// Transcendent Olfaction (3 a day, lasts until replaced) and Gallapagosian Mating Call make a monster turn up
+// more often. Set as_trackMonster and pass "as_trackFilter" as the combat filter; your own combat settings do
+// the rest of the fight.
+monster as_trackMonster;
+
+string as_trackFilter(int round, monster enemy, string text)
+{
+	if(as_trackMonster == $monster[none] || enemy != as_trackMonster || round > 2 || !as_setting("track", "true").to_boolean())
+	{
+		return "";
+	}
+	if(get_property("olfactedMonster") != enemy.to_string() && have_skill($skill[Transcendent Olfaction])
+		&& get_property("_olfactionsUsed").to_int() < 3 && my_mp() >= mp_cost($skill[Transcendent Olfaction]) + 20)
+	{
+		return "skill Transcendent Olfaction";
+	}
+	if(get_property("_gallapagosMonster") != enemy.to_string() && have_skill($skill[Gallapagosian Mating Call])
+		&& my_mp() >= mp_cost($skill[Gallapagosian Mating Call]) + 20)
+	{
+		return "skill Gallapagosian Mating Call";
+	}
+	return "";
+}
+
+// ---------------------------------------------------------------- make or buy
+// Before buying, compare the mall with the in-game ways to get an item: an NPC store, Big Brother (sand dollars,
+// themselves make-or-buy), or collecting it from sea monsters. Collecting costs the turns it takes times what
+// those turns lose against your best farm zone: the collecting zone's own meat and drops count, so a drop from a
+// zone you'd farm anyway costs next to nothing, and collecting is farming. autosea_selfSufficiency above 1
+// favours in-game sources (1.5: collect even at up to 1.5 times the mall price).
+
+record as_source
+{
+	string how;
+	location loc;
+	monster target;
+	float turns;	//turns per item, when collecting
+	int cost;	//meat per item
+};
+
+boolean[location] AS_COLLECT_ZONES = $locations[The Briny Deeps, The Brinier Deepers, The Briniest Deepests,
+	An Octopus's Garden, Madness Reef, The Mer-Kin Outpost, The Skate Park, The Coral Corral, Anemone Mine,
+	The Dive Bar, The Marinara Trench];
+
+as_source as_dropSource(item it)
+{
+	as_source best;
+	best.cost = 999999999;
+	int bestTurn = as_bestTurnValue();
+	foreach loc in AS_COLLECT_ZONES
+	{
+		if(!can_adventure(loc))
+		{
+			continue;
+		}
+		float netItem = numeric_modifier("Item Drop") + as_zonePenalty(loc);
+		float perFight = 0;
+		monster target = $monster[none];
+		float targetChance = 0;
+		foreach m, w in as_zoneMonsters(loc)
+		{
+			foreach i, d in item_drops_array(m)
+			{
+				if(d.drop != it || d.rate <= 0 || !as_dropApplies(d.drop, d.type, loc))
+				{
+					continue;
+				}
+				float chance = d.type.contains_text("f") ? d.rate / 100 : min(1.0, d.rate / 100 * max(0.0, 1 + netItem / 100));
+				perFight += w * chance;
+				if(chance > targetChance)
+				{
+					target = m;
+					targetChance = chance;
+				}
+			}
+		}
+		if(perFight <= 0)
+		{
+			continue;
+		}
+		//what a turn here earns besides this item
+		float earns = (as_turnValueKnown(loc) ? as_turnValue(loc) : as_zoneEstimate(loc)) - perFight * as_dropValue(it);
+		float turns = 1 / perFight;
+		int cost = round(turns * max(0.0, bestTurn - earns));
+		if(cost < best.cost)
+		{
+			best.how = "collect";
+			best.loc = loc;
+			best.target = target;
+			best.turns = turns;
+			best.cost = cost;
+		}
+	}
+	return best;
+}
+
+int as_unitCost(item it);
+
+// the cheapest way to get one without the mall
+as_source as_ingameSource(item it)
+{
+	as_source best = as_dropSource(it);
+	if(npc_price(it) > 0 && npc_price(it) < best.cost)
+	{
+		best.how = "npc";
+		best.cost = npc_price(it);
+	}
+	if(is_coinmaster_item(it) && sell_price($coinmaster[Big Brother], it) > 0)
+	{
+		int coins = sell_price($coinmaster[Big Brother], it) * as_unitCost($item[sand dollar]);
+		if(coins < best.cost)
+		{
+			best.how = "Big Brother";
+			best.cost = coins;
+		}
+	}
+	return best;
+}
+
+// what one costs, the cheaper of the mall and the best in-game way
+int as_unitCost(item it)
+{
+	int mall = mall_price(it) > 0 ? mall_price(it) : 999999999;
+	if(it == $item[sand dollar])
+	{
+		return min(mall, as_dropSource(it).cost);	//not sold by Big Brother itself
+	}
+	return min(mall, as_ingameSource(it).cost);
+}
+
+boolean as_seaAdv(location loc, string extraMaximize, string filter);
+boolean as_buyFromBigBrother(item it, int cost);
+boolean as_collecting;
+
+// collect qty of an item from the sea, tracking the monster that drops it. Gives up after twice the expected
+// turns (or autosea_collectMaxTurns), or if the zone isn't safe.
+boolean as_collect(int qty, item it, as_source src)
+{
+	int limit = min(as_setting("collectMaxTurns", "60").to_int(), ceil(src.turns * (qty - item_amount(it)) * 2) + 5);
+	if(my_adventures() - as_advReserve() < limit / 2)
+	{
+		return false;
+	}
+	as_info("Collecting " + (qty - item_amount(it)) + " " + it + " in " + src.loc + " (about " + ceil(src.turns) + " turns each, "
+		+ src.cost + " meat each in lost farming, against " + mall_price(it) + " in the mall).");
+	as_collecting = true;
+	monster oldTarget = as_trackMonster;
+	as_trackMonster = src.target;
+	int start = my_turncount();
+	try
+	{
+		while(item_amount(it) < qty && my_turncount() - start < limit)
+		{
+			if(!as_seaAdv(src.loc, "", "as_trackFilter"))
+			{
+				break;
+			}
+		}
+	}
+	finally
+	{
+		as_collecting = false;
+		as_trackMonster = oldTarget;
+	}
+	return item_amount(it) >= qty;
+}
+
+// make sure we hold qty of it: closet and storage first, then the cheapest of the mall and the in-game ways.
+// Returns true if we hold enough.
 boolean as_acquire(int qty, item it)
 {
 	if(as_fetch(qty, it))
 	{
 		return true;
+	}
+	if(!as_collecting && as_setting("collect", "true").to_boolean())
+	{
+		as_source src = as_ingameSource(it);
+		int mall = mall_price(it) > 0 ? mall_price(it) : 999999999;
+		if(src.how == "collect" && src.cost < mall * as_setting("selfSufficiency", "1").to_float()
+			&& as_collect(qty, it, src))
+		{
+			return true;
+		}
+		if(src.how == "Big Brother" && src.cost < mall)
+		{
+			while(item_amount(it) < qty && as_buyFromBigBrother(it, sell_price($coinmaster[Big Brother], it)))
+			{
+			}
+			if(item_amount(it) >= qty)
+			{
+				return true;
+			}
+		}
+		if(src.how == "collect" && mall < 999999999)
+		{
+			as_debug("Buying " + it + " (~" + mall + "): collecting would cost about " + src.cost + " (" + ceil(src.turns) + " turns in " + src.loc + ").");
+		}
 	}
 	if(!as_buyingAllowed())
 	{
@@ -93,6 +286,10 @@ boolean as_acquire(int qty, item it)
 	}
 	int missing = qty - item_amount(it);
 	int price = mall_price(it);
+	if(npc_price(it) > 0 && (price <= 0 || npc_price(it) < price))
+	{
+		price = npc_price(it);	//an NPC store is cheaper, and KoLmafia buys from it first
+	}
 	if(price <= 0)
 	{
 		as_warn("Need " + it + " but KoLmafia found no mall price for it.");
@@ -422,14 +619,13 @@ void as_applyBoosts(string expr)
 // more than the whistle plus the turn it takes (what a turn in the zone earns).
 int as_whistleCost()
 {
-	//owned whistles count at mall value (they could be sold); otherwise a sand dollar, or a mall whistle
+	//owned whistles count at mall value (they could be sold); otherwise the cheaper of the mall and Big Brother
 	int mall = mall_price($item[dolphin whistle]);
 	if(item_amount($item[dolphin whistle]) > 0 || closet_amount($item[dolphin whistle]) > 0)
 	{
 		return mall > 0 ? mall : 300;
 	}
-	int dollar = mall_price($item[sand dollar]);
-	return min(mall > 0 ? mall : 999999, dollar > 0 ? dollar : 300);
+	return as_unitCost($item[dolphin whistle]);
 }
 
 boolean as_chaseDolphin(location loc)
@@ -450,8 +646,7 @@ boolean as_chaseDolphin(location loc)
 	{
 		return false;
 	}
-	if(!as_fetch(1, $item[dolphin whistle]) && !as_buyFromBigBrother($item[dolphin whistle], 1)
-		&& !(mall_price($item[dolphin whistle]) <= 1000 && as_acquire(1, $item[dolphin whistle])))
+	if(!as_acquire(1, $item[dolphin whistle]))
 	{
 		as_warn("A dolphin stole your " + stolen + " (" + value + " meat), but there's no dolphin whistle to get it back.");
 		return false;

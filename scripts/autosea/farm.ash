@@ -344,30 +344,8 @@ void as_farmBuffs()
 	}
 }
 
-// ---------------------------------------------------------------- tracking the valuable monster
-// Transcendent Olfaction (3 a day, lasts until replaced) and Gallapagosian Mating Call make a monster turn up
-// more often. In each farm zone autosea tracks the monster worth clearly the most (in the Coral Corral, the sea
-// cowboy for sea lassos), replacing whatever was tracked before, such as a leftover from your last ascension.
-monster as_farmTarget;
-
-string as_farmFilter(int round, monster enemy, string text)
-{
-	if(as_farmTarget == $monster[none] || enemy != as_farmTarget || round > 2 || !as_setting("track", "true").to_boolean())
-	{
-		return "";
-	}
-	if(get_property("olfactedMonster") != enemy.to_string() && have_skill($skill[Transcendent Olfaction])
-		&& get_property("_olfactionsUsed").to_int() < 3 && my_mp() >= mp_cost($skill[Transcendent Olfaction]) + 20)
-	{
-		return "skill Transcendent Olfaction";
-	}
-	if(get_property("_gallapagosMonster") != enemy.to_string() && have_skill($skill[Gallapagosian Mating Call])
-		&& my_mp() >= mp_cost($skill[Gallapagosian Mating Call]) + 20)
-	{
-		return "skill Gallapagosian Mating Call";
-	}
-	return "";
-}
+// In each farm zone, track the monster worth clearly the most (in the Coral Corral, the sea cowboy for sea
+// lassos), replacing whatever was tracked before, such as a leftover from your last ascension.
 
 // zones that turned out unsafe once actually geared and buffed this session
 boolean[location] as_farmExcluded;
@@ -436,12 +414,12 @@ void as_farm(int turns)
 				break;
 			}
 			monster target = as_trackTarget(next);	//judged with the zone's gear on
-			if(next != zone || target != as_farmTarget)
+			if(next != zone || target != as_trackMonster)
 			{
 				as_info("Farming " + next + (target == $monster[none] ? "." : ", tracking the " + target + "."));
 			}
 			zone = next;
-			as_farmTarget = target;
+			as_trackMonster = target;
 			sincePick = 0;
 		}
 		as_farmBuffs();
@@ -460,7 +438,7 @@ void as_farm(int turns)
 		}
 		//gear is already on, so pass no extra maximizer terms (that would undo a farm outfit)
 		as_lastUnsafeZone = $location[none];
-		if(!as_adv(zone, "", "as_farmFilter"))
+		if(!as_adv(zone, "", "as_trackFilter"))
 		{
 			if(as_lastUnsafeZone == zone)
 			{

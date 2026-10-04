@@ -135,7 +135,7 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 - **Mom's food:** once Mom is rescued, it takes her daily food first (`autosea_farmMomFood`, default `stats`, which gives Cereal Killer: +200 Experience for 50 turns).
 - **Combat:** your own combat settings. Something that picks club or spells by cost, like SimpleSmack, works well.
 - **Tracking the valuable monster:** in each farm zone, autosea works out what each monster is worth with your gear on (meat plus drops at mall prices). When one is worth clearly more than an average fight there (`autosea_trackMargin`, 1.3 times, and at least 100 meat more), it tracks that monster. It uses Transcendent Olfaction (3 a day; the trail lasts until replaced, so a leftover from your last ascension gets replaced) and Gallapagosian Mating Call if you have it. In the Coral Corral that's the sea cowboy, for sea lassos. `autosea_track = false` turns this off.
-- **Dolphins:** underwater, a dolphin can snatch a drop you just missed. Only the last stolen item can be recovered. Whenever the stolen item is worth more than a dolphin whistle plus a turn in that zone (a sea lasso is; a Mer-kin thingpouch isn't), autosea uses a whistle at once and fights the thief, an easy fight on the surface. It uses whistles you own, or buys one from Big Brother for a sand dollar. Owned whistles count at their mall price (about 320). `autosea_chaseDolphins = false` turns this off.
+- **Dolphins:** underwater, a dolphin can snatch a drop you just missed. Only the last stolen item can be recovered. Whenever the stolen item is worth more than a dolphin whistle plus a turn in that zone (a sea lasso is; a Mer-kin thingpouch isn't), autosea uses a whistle at once and fights the thief, an easy fight on the surface. It uses whistles you own, or gets one the cheapest way (see Make or buy). Owned whistles count at their mall price (about 320). `autosea_chaseDolphins = false` turns this off.
 - **Fishbreath (off by default):** the Briniest Deepests' best drops (temporary teardrop tattoo, shark cartilage, eel battery) only drop while you have Fishbreath, from bazookafish bubble gum (about 100 meat for 5 turns). It also makes every monster there flip out, with double attack and defence, which the survival check can't see. `autosea_fishbreath = true` keeps it up in the Briniest Deepests while it pays for itself. It stops for the day after a fight lost with Fishbreath.
 - **Stops:** at the turn count, your adventure reserve, being Beaten Up, or running out of Fishy. It then reports meat and stats per turn.
 
@@ -155,6 +155,26 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 | `autosea_farmFamiliar` | Grouper Groupie | Familiar to farm with |
 | `autosea_farmRequireFishy` | `true` | Stop rather than adventure without Fishy |
 | `autosea_farmMomFood` | `stats` | Mom's daily food (`none` to skip) |
+
+## Make or buy
+
+Before buying anything, autosea compares the mall price with the in-game ways to get it:
+- **NPC stores**, when one sells it to you.
+- **Big Brother**, for sand dollars. Sand dollars are themselves valued make-or-buy.
+- **Collecting it from sea monsters.** That costs the turns it takes (from drop rates and your item drop after the pressure penalty), times what those turns lose against your best farm zone.
+
+The collecting zone's own meat and drops count, so **farming and collecting happen together**:
+- A drop from a zone you'd farm anyway, like sea cowbells in the Corral, costs next to nothing.
+- Collecting is itself a short farm session in that zone.
+- Drops you already hold are used before anything is bought.
+
+When collecting is cheaper, autosea goes and gets the item, tracking the monster that drops it. It gives up after twice the expected turns (or `autosea_collectMaxTurns`, 60) and buys instead. At typical farm earnings most cheap items are quicker to buy. Sand dollars, for example, are about 20 turns each in An Octopus's Garden, against about 300 in the mall.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `autosea_collect` | `true` | Collect items in-game when that's cheaper than the mall |
+| `autosea_selfSufficiency` | 1 | Above 1 favours in-game sources (1.5: collect even at up to 1.5 times the mall price) |
+| `autosea_collectMaxTurns` | 60 | Most turns spent collecting one batch |
 
 ## Paying for buffs
 
