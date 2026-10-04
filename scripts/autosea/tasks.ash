@@ -377,9 +377,52 @@ boolean as_sushiMat()
 
 boolean as_helmetTried = false;
 
+// Another breathing hat makes the aerated diving helmet redundant: the Mer-kin masks have the same stats.
+boolean as_haveBreathingHat()
+{
+	foreach it in $items[Mer-kin gladiator mask, Mer-kin scholar mask, crappy Mer-kin mask]
+	{
+		if(available_amount(it) > 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+// Rusty diving helmet: craft it from parts if they're all held, else buy whichever is cheaper,
+// the helmet or the missing parts (rusty rivets are the expensive bit).
+boolean as_getRustyHelmet()
+{
+	if(available_amount($item[rusty diving helmet]) > 0)
+	{
+		return as_fetch(1, $item[rusty diving helmet]);
+	}
+	int missingRivets = max(0, 8 - available_amount($item[rusty rivet]));
+	int partsCost = missingRivets * mall_price($item[rusty rivet])
+		+ (available_amount($item[rusty porthole]) > 0 ? 0 : mall_price($item[rusty porthole]))
+		+ (available_amount($item[rusty broken diving helmet]) > 0 ? 0 : mall_price($item[rusty broken diving helmet]));
+	if(partsCost <= mall_price($item[rusty diving helmet]))
+	{
+		if(as_acquire(8, $item[rusty rivet]) && as_acquire(1, $item[rusty porthole]) && as_acquire(1, $item[rusty broken diving helmet]))
+		{
+			as_info("Assembling a rusty diving helmet from parts.");
+			create(1, $item[rusty diving helmet]);
+		}
+		return item_amount($item[rusty diving helmet]) > 0;
+	}
+	return as_acquire(1, $item[rusty diving helmet]);
+}
+
 boolean as_helmet()
 {
-	if(as_helmetTried || !as_wantHelmet() || available_amount($item[aerated diving helmet]) > 0)
+	if(as_helmetTried || available_amount($item[aerated diving helmet]) > 0)
+	{
+		return false;
+	}
+	//"true" (default): only when you have no other breathing hat; "force": always; "false": never
+	string want = as_setting("helmet", "true");
+	if(want == "false" || (want != "force" && as_haveBreathingHat()))
 	{
 		return false;
 	}
@@ -388,7 +431,7 @@ boolean as_helmet()
 		return false;	//comes from Big Brother on his first visit
 	}
 	as_helmetTried = true;	//one attempt per run, so a missing purchase doesn't repeat every turn
-	if(!as_acquire(1, $item[rusty diving helmet]))
+	if(!as_getRustyHelmet())
 	{
 		return false;
 	}

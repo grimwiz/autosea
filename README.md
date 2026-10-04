@@ -41,7 +41,8 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_useSpleen` | `true` | Chew sea jelly for Fishy |
 | `autosea_dangerRounds` | 4 | Skip a zone when its hardest monster's expected damage per round, times this many rounds, would take 90% of your maximum HP |
 | `autosea_ignoreDanger` | `false` | Enter zones even when that check says you'd likely be beaten up |
-| `autosea_skatePark` / `autosea_sushiMat` / `autosea_helmet` | `true` | Do these optional steps |
+| `autosea_skatePark` / `autosea_sushiMat` | `true` | Do these optional steps |
+| `autosea_helmet` | `true` | Make an aerated diving helmet only if you have no other breathing hat (a Mer-kin mask is just as good). It crafts the rusty diving helmet if you hold all the parts, otherwise buys the cheaper of the helmet or the missing parts. `force` makes one anyway (for example to trade it to Grandma); `false` never does |
 | `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
 
