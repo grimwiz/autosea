@@ -59,6 +59,28 @@ void main(int choice, string page)
 			run_choice(item_amount($item[Mer-kin lockkey]) > 0 ? next : 4);
 			return;
 		}
+		//Mer-kin Elementary School: unlock the rooms, then the teacher's lounge (facecowl, waistrope, wordquizzes)
+		case 396:	//Woolly Scaly Bully: unlock the janitor's closet
+			run_choice(3);
+			return;
+		case 397:	//Bored of Education: unlock the bathrooms
+			run_choice(2);
+			return;
+		case 398:	//A Mer-kin Graffiti: unlock the teacher's lounge
+			run_choice(1);
+			return;
+		case 399:	//The Case of the Closet: fight a monitor (the cheatsheet carrier)
+			run_choice(1);
+			return;
+		case 400:	//No Rest for the Room: cancerstick
+			run_choice(2);
+			return;
+		case 401:	//Raising Cane: the teacher's lounge
+			run_choice(2);
+			return;
+		case 705:	//Halls Passing in the Night (hallpass): the teacher's lounge if it's open
+			run_choice(get_property("merkinElementaryTeacherUnlock").to_boolean() ? 4 : 2);
+			return;
 		case 403:	//Picking Sides (Skate Park): the ice skates
 			run_choice(1);
 			return;

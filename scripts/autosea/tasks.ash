@@ -847,6 +847,9 @@ AS_TASKS[9] = "as_grandpaTopics";
 AS_TASKS[10] = "as_grandma";
 AS_TASKS[11] = "as_mom";
 AS_TASKS[12] = "as_seahorse";
+AS_TASKS[13] = "as_schoolGear";		//defined in deepcity.ash
+AS_TASKS[14] = "as_merkinVocab";
+AS_TASKS[15] = "as_workteaClue";
 
 string[int] as_taskOrder()
 {
@@ -856,11 +859,11 @@ string[int] as_taskOrder()
 string as_stateSignature()
 {
 	string sig = "";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount]
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll7, merkinQuestPath]
 	{
 		sig += get_property(prop) + "|";
 	}
-	foreach it in $items[sand dollar, wriggling flytrap pellet, bubblin' stone, rusty diving helmet, aerated diving helmet, damp old boot, fishy pipe, das boot, sushi-rolling mat, skate blade, Grandma's Note, Grandma's Fuchsia Yarn, Grandma's Chartreuse Yarn, Grandma's Map, black glass, scale-mail underwear, shark jumper, comb jelly, Mer-kin lockkey, Mer-kin stashbox, Mer-kin trailmap]
+	foreach it in $items[sand dollar, wriggling flytrap pellet, bubblin' stone, rusty diving helmet, aerated diving helmet, damp old boot, fishy pipe, das boot, sushi-rolling mat, skate blade, Grandma's Note, Grandma's Fuchsia Yarn, Grandma's Chartreuse Yarn, Grandma's Map, black glass, scale-mail underwear, shark jumper, comb jelly, Mer-kin lockkey, Mer-kin stashbox, Mer-kin trailmap, Mer-kin facecowl, Mer-kin waistrope, Mer-kin cheatsheet, Mer-kin wordquiz, Mer-kin worktea]
 	{
 		sig += available_amount(it) + "|";
 	}
@@ -890,6 +893,15 @@ void as_printStatus()
 	line("Seahorse" + (get_property("seahorseName") != "" ? " (" + get_property("seahorseName") + ")"
 		: " (Corral " + (get_property("corralUnlocked").to_boolean() ? "open" : "closed") + ", lasso " + get_property("lassoTrainingCount") + "/20)"),
 		get_property("seahorseName") != "");
+	if(get_property("seahorseName") != "")
+	{
+		print("Deepcity:", "blue");
+		line("Mer-kin facecowl", available_amount($item[Mer-kin facecowl]) > 0);
+		line("Mer-kin waistrope", available_amount($item[Mer-kin waistrope]) > 0);
+		line("Vocabulary " + get_property("merkinVocabularyMastery") + "% (cheatsheets " + available_amount($item[Mer-kin cheatsheet]) + ")",
+			get_property("merkinVocabularyMastery").to_int() >= 100);
+		line("Worktea clue", get_property("dreadScroll7").to_int() != 0);
+	}
 	print("Pearls found today:", "blue");
 	foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]
 	{

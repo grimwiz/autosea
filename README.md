@@ -56,6 +56,16 @@ After Mom, autosea tames the seahorse you need to reach the Mer-kin Deepcity (`a
 4. Throughout, throws a sea lasso once per underwater fight until you're an expert (20 points). Sea chaps add a point per throw. The sea cowboy hat adds another, but it takes the breathing hat slot, so autosea only wears it when breathing is already covered by an active effect or non-hat breathing gear. It never buys or uses anything just for that.
 5. In the Coral Corral, rings 3 sea cowbells at the wild seahorse, then lassos it. Taming costs no adventure. If the lasso isn't expert yet, it runs from the seahorse, which damage can't touch.
 
+## The Mer-kin Deepcity (stage 1)
+
+Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is allowed per ascension, and its reward depends on your class. So `autosea_deepcityPath = auto` (the default) takes the Scholar route to Yog-Urt when you don't yet own your class's "of Hatred" piece. Stage 1 covers:
+
+- **Mer-kin Elementary School:** unlocks the teacher's lounge and collects the **Mer-kin facecowl** and **waistrope** (`autosea_schoolGear`). These only drop while the matching Scholar's Vestments piece is *not* in your inventory, so autosea parks the scholar mask and tailpiece in your closet, wears the Gladiatorial Gear (or Crappy Disguise) as the disguise, and puts them back when it finishes. It olfacts the Mer-kin monitor, the only cheatsheet carrier, up to the daily limit (`autosea_olfactMonitor`).
+- **Vocabulary:** uses a wordquiz with each cheatsheet for +10% each, up to `autosea_vocabTarget` (100). It uses cheatsheets found in the School first and buys only the shortfall once the School work is done.
+- **Worktea clue:** eats a nigiri you rolled yourself with a Mer-kin worktea in inventory, for dreadscroll clue 7. It needs 2 free fullness.
+
+The Library (the dreadscroll and its clues), reading the dreadscroll, and the Yog-Urt fight come in later stages.
+
 ## Unblemished pearls
 
 Five sea zones each give one unblemished pearl a day. They sell for far more in the mall than they autosell for. Each won fight adds progress depending on your resistance to the zone's element:

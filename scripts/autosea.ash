@@ -12,6 +12,7 @@ since r29000;
 import <autosea/util.ash>
 import <autosea/tasks.ash>
 import <autosea/farm.ash>
+import <autosea/deepcity.ash>
 
 string as_currentTask;
 

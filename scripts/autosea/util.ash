@@ -59,6 +59,19 @@ void as_overrideProperty(string prop, string value)
 	set_property(prop, value);
 }
 
+// items moved to the closet for the run (e.g. so a drop that needs them absent can happen); always put back
+int[item] as_parked;
+
+void as_parkInCloset(item it)
+{
+	int n = item_amount(it);
+	if(n > 0)
+	{
+		put_closet(n, it);
+		as_parked[it] += n;
+	}
+}
+
 void as_restoreProperties()
 {
 	foreach prop, value in as_savedPrefs
@@ -66,6 +79,11 @@ void as_restoreProperties()
 		set_property(prop, value);
 	}
 	clear(as_savedPrefs);
+	foreach it, n in as_parked
+	{
+		take_closet(min(n, closet_amount(it)), it);
+	}
+	clear(as_parked);
 }
 
 void as_takeOverSettings()
