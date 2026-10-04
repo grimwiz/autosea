@@ -390,10 +390,13 @@ void as_farm(int turns)
 			break;
 		}
 		sincePick += 1;
-		if(have_effect($effect[Beaten Up]) > 0)
+		//stop only if this fight was lost: a Beaten Up left over from an earlier quest fight doesn't count
+		if(get_property("_lastCombatLost").to_boolean() && get_property("lastEncounter") != "" && current_round() == 0)
 		{
-			as_warn("Beaten up in " + zone + "; stopping. Try a shallower zone or more defensive gear.");
-			break;
+			as_warn("Lost a fight in " + zone + "; stopping farming there. Try a shallower zone or more defensive gear.");
+			as_farmExcluded[zone] = true;
+			zone = $location[none];
+			continue;
 		}
 	}
 
