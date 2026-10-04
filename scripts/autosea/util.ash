@@ -310,15 +310,12 @@ boolean[location] as_reportedZones;
 // the last zone the survival check refused, so the quest loop can farm to get stronger
 location as_lastUnsafeZone = $location[none];
 
-boolean as_zoneIsSafe(location loc)
+// the hardest-hitting monster in the zone and its expected damage per round, with current gear and buffs
+monster as_worstMonster;
+int as_worstDamage(location loc)
 {
-	if(as_setting("ignoreDanger", "false").to_boolean())
-	{
-		return true;
-	}
-	int rounds = as_setting("dangerRounds", "4").to_int();
 	int worst = 0;
-	monster worstMonster = $monster[none];
+	as_worstMonster = $monster[none];
 	foreach mon, rate in appearance_rates(loc)
 	{
 		if(rate <= 0 || mon == $monster[none])
@@ -329,13 +326,31 @@ boolean as_zoneIsSafe(location loc)
 		if(dmg > worst)
 		{
 			worst = dmg;
-			worstMonster = mon;
+			as_worstMonster = mon;
 		}
 	}
-	if(worst * rounds < my_maxhp() * 0.9)
+	return worst;
+}
+
+// the survival check without any reporting
+boolean as_zoneSafeQuiet(location loc)
+{
+	if(as_setting("ignoreDanger", "false").to_boolean())
 	{
 		return true;
 	}
+	return as_worstDamage(loc) * as_setting("dangerRounds", "4").to_int() < my_maxhp() * 0.9;
+}
+
+boolean as_zoneIsSafe(location loc)
+{
+	if(as_zoneSafeQuiet(loc))
+	{
+		return true;
+	}
+	int rounds = as_setting("dangerRounds", "4").to_int();
+	int worst = as_worstDamage(loc);
+	monster worstMonster = as_worstMonster;
 	as_lastUnsafeZone = loc;
 	if(!(as_reportedZones contains loc))
 	{
@@ -355,6 +370,12 @@ string as_progressMarker()
 		+ "|" + get_property("questS02Monkees") + "|" + get_property("momSeaMonkeeProgress") + "|" + get_property("skateParkStatus");
 }
 
+// gear weights that put survival first
+string as_defensiveTerms()
+{
+	return as_setting("defensiveMaximize", "2 hp, 6 dr, 2 moxie");
+}
+
 // one adventure in a sea zone. Returns false (and says why) if it could not adventure.
 // filter: name of a combat filter function, or "" to leave combat entirely to your own combat settings.
 boolean as_adv(location loc, string extraMaximize, string filter)
@@ -368,6 +389,10 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 	{
 		as_warn("Can't breathe underwater (you or your familiar) for " + loc + ". Get a fishbowl, helmet or similar first.");
 		return false;
+	}
+	if(!as_zoneSafeQuiet(loc) && as_equipForSea(extraMaximize + (extraMaximize == "" ? "" : ", ") + as_defensiveTerms()) && as_zoneSafeQuiet(loc))
+	{
+		as_debug("defensive gear makes " + loc + " safe");
 	}
 	if(!as_zoneIsSafe(loc))
 	{

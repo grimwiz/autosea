@@ -93,26 +93,6 @@ boolean as_farmEquip()
 	return as_equipForSea(as_farmGear());
 }
 
-// equip for a specific zone: farm gear plus that zone's pearl resistance, then potion top-up
-boolean as_farmEquipFor(location loc)
-{
-	boolean ok;
-	if(as_farmOutfit() == "" && as_pearlAvailable(loc))
-	{
-		//a pearl is worth far more per fight than meat gear adds, so dress for survival and the zone's resistance
-		ok = as_equipForSea(as_setting("pearlMaximize", "mainstat, moxie, 1 hp, 3 dr, 0.5 exp") + ", " + as_pearlGear(loc));
-	}
-	else
-	{
-		ok = as_farmEquip();
-	}
-	if(ok)
-	{
-		as_pearlTopUp(loc);
-	}
-	return ok;
-}
-
 // never farmed: trophyfish (Brinier Deepers), mine crabs (Wreck), quest zones with poor drops
 string as_farmGear()
 {
@@ -154,6 +134,83 @@ void as_farmDailies()
 	{
 		cli_execute("mom " + as_setting("farmMomFood", "stats"));
 	}
+}
+
+// Gear profiles from most profitable to most defensive. For each zone the first profile that passes the
+// survival check is used, so an easy zone gets meat gear and a hard one gets HP and damage reduction.
+// Re-chosen whenever the zone is re-picked (every 10 adventures), so it drifts back to greedy as you grow.
+string as_farmProfile(int i, location loc)
+{
+	string greedy = "2 meat, 2 exp";
+	if(as_farmGoal() == "stats")
+	{
+		greedy = "0.5 meat, 3 exp";
+	}
+	string gear;
+	switch(i)
+	{
+		case 0: gear = greedy; break;
+		case 1: gear = "meat, exp, 1 hp, 3 dr"; break;
+		default: gear = as_defensiveTerms() + ", 0.5 exp"; break;
+	}
+	foreach it in $items[aquamariner's necklace, aquamariner's ring]
+	{
+		if(available_amount(it) > 0 && can_equip(it))
+		{
+			gear += ", +equip " + it;	//Better Diver and meat; the maximizer doesn't value Better Diver
+		}
+	}
+	if(i == 0 && as_farmGoal() != "stats" && (available_amount($item[Mer-kin begsign]) > 0 || as_acquire(1, $item[Mer-kin begsign]))
+		&& can_equip($item[Mer-kin begsign]))
+	{
+		gear += ", +equip Mer-kin begsign";	//+40% Meat Drop underwater
+	}
+	if(as_pearlAvailable(loc))
+	{
+		gear += ", " + as_pearlGear(loc);	//pearls are worth more than anything else here
+	}
+	return gear;
+}
+
+string[location] as_farmChosen;	//the profile gear chosen for each zone this pick
+
+// equip for a specific zone: the most profitable safe profile (or the farm outfit), then pearl potions
+boolean as_farmEquipFor(location loc)
+{
+	boolean ok;
+	if(as_farmOutfit() != "")
+	{
+		ok = as_farmEquip();
+	}
+	else if(as_farmChosen contains loc)
+	{
+		ok = as_equipForSea(as_farmChosen[loc]);
+	}
+	else
+	{
+		ok = false;
+		for i from 0 to 2
+		{
+			string gear = as_farmProfile(i, loc);
+			if(!as_equipForSea(gear))
+			{
+				continue;
+			}
+			as_pearlTopUp(loc);
+			ok = true;
+			if(as_zoneSafeQuiet(loc))
+			{
+				as_farmChosen[loc] = gear;
+				as_debug(loc + ": gear profile " + (i + 1) + " is safe");
+				break;
+			}
+		}
+	}
+	if(ok)
+	{
+		as_pearlTopUp(loc);
+	}
+	return ok;
 }
 
 // Fill the stomach with sushi before farming: each beefy maki is 3 fullness, 7-12 adventures and 45 turns of Fishy
@@ -294,6 +351,7 @@ void as_farm(int turns)
 		boolean pearlInProgress = as_pearlAvailable(zone) && as_pearlProgress(zone) > 0;
 		if(zone == $location[none] || pearlDone || (sincePick >= 10 && !pearlInProgress))
 		{
+			clear(as_farmChosen);	//re-choose gear profiles too: you may be stronger now
 			location next = as_pickFarmZone(turns - (my_turncount() - startTurns));
 			if(next == $location[none])
 			{

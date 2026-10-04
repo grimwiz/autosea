@@ -99,7 +99,12 @@ Once Grandpa is found, autosea asks any of his stories you haven't heard yet (`a
 
 - **Zone:** the best sea zone that passes the survival check, re-checked every 10 adventures so it moves deeper as you level. `autosea_farmGoal` picks the order: `both` (the default: the Briniest Deepests, then the Coral Corral from level 16), `meat` (the Briniest Deepests from level 16) or `stats` (the Coral Corral or Mer-Kin Outpost from level 16). The Briny Deeps is the fallback for all three. The Brinier Deepers (trophyfish) and the Wreck (mine crabs) are never farmed.
 - **Fishy:** kept up before every adventure. By default it stops rather than pay 2 adventures a turn.
-- **Gear:** `sea` plus `autosea_farmMaximize` (default `meat, 1.5 mainstat, 0.5 hp, 2 dr`), and the aquamariner's necklace and ring if you own them, for Better Diver.
+- **Gear, balanced against danger:** for each zone autosea tries three gear profiles, most profitable first, and uses the first that passes the survival check:
+  1. greedy: meat, experience and the Mer-kin begsign;
+  2. balanced: meat, experience, HP and damage reduction;
+  3. defensive (`autosea_defensiveMaximize`, default `2 hp, 6 dr, 2 moxie`).
+
+  Pearl zones add the zone's resistance (up to 18) to every profile, and your aquamariner's necklace and ring are always worn, for Better Diver. The choice is made again every 10 adventures, so it moves back to greedy gear as you get stronger. A saved `autosea_farmOutfit` replaces all of this.
 - **Familiar:** `autosea_farmFamiliar` (default Grouper Groupie, if you have it).
 - **Diet:** first fills your stomach with sushi: beefy maki (3 fullness, 7–12 adventures, 45 turns of Fishy each), with nigiri for the last 2 fullness. Fishy stacks, so a full stomach covers a day of farming. Ingredients are bought (about 1,250 meat a maki, mostly white rice). Set `autosea_farmFillStomach = false` to skip.
 - **Daily setup:** once a day, runs Veracity's meat farm in `nofarm` mode (its daily tasks, meat buffs and clan lounge raids, without its farming loop), but only when your stomach, liver and spleen are full. Its diet step would otherwise replace the sushi, and it can loop when it can't buy food. Fill your liver and spleen yourself. Set `autosea_farmPrep = none` to skip it.
@@ -147,7 +152,7 @@ Set `autosea_takeSeaItems = false` to always skip, or `autosea_useChoiceScript =
 
 Before entering a zone autosea asks KoLmafia how hard each monster there would hit you with your current gear and buffs. If a typical fight could beat you up, it skips the zone and tells you why.
 
-If that stops the quest, autosea farms for `autosea_farmBlockTurns` (20) turns to get stronger (pearls, then meat and stats, with Mom's Cereal Killer once she's rescued), then tries the quest again. It repeats until the zone opens up or your adventures run low. Set `autosea_farmWhenBlocked = false` to stop instead.
+Before giving up on a quest zone, it retries with defensive gear. If that still isn't enough, it farms for `autosea_farmBlockTurns` (20) turns to get stronger (pearls, then meat and stats, with Mom's Cereal Killer once she's rescued), then tries the quest again. It repeats until the zone opens up or your adventures run low. Set `autosea_farmWhenBlocked = false` to stop instead.
 
 
 If a task claims to act three times in a row but neither your turn count nor your quest progress changes, autosea stops with a message instead of looping.
