@@ -302,11 +302,36 @@ boolean as_collect(int qty, item it, as_source src)
 
 // "autosea collect <item> [turns]": go and get one of an item from the sea, however it compares with the mall
 // (for things you want for themselves, like skill books). Learns the skill if it's a skill book.
-void as_collectCommand(item it, int turns)
+void as_collectCommand(item it, int turns, int qty)
 {
 	if(it == $item[none])
 	{
-		as_warn("Which item? For example: autosea collect Mer-kin darkbook 150");
+		as_warn("Which item? For example: autosea collect Mer-kin darkbook 150, or autosea collect 5 Mer-kin knucklebone");
+		return;
+	}
+	if(qty > 1)
+	{
+		//a number to hold, counting the closet and Hagnk's
+		int held = available_amount(it) + storage_amount(it);
+		if(held >= qty)
+		{
+			as_info("You already hold " + held + " " + it + ".");
+			return;
+		}
+		item oldItem = as_collectItem;
+		as_collectItem = it;
+		as_source src = as_dropSource(it);
+		as_collectItem = oldItem;
+		if(src.how != "collect")
+		{
+			as_warn("autosea doesn't know a sea monster you can reach that drops " + it + ".");
+			return;
+		}
+		as_info(it + ": holding " + held + " of " + qty + "; about " + ceil(src.turns) + " turns each in " + src.loc + ".");
+		if(!as_collect(item_amount(it) + qty - held, it, src, turns > 0 ? turns : 9999))
+		{
+			as_warn("Not all " + qty + " " + it + " yet. Run it again to keep going.");
+		}
 		return;
 	}
 	skill teaches = string_modifier(it, "Skill").to_skill();
@@ -1593,7 +1618,7 @@ void as_collectSeaSkills(int turns)
 	as_printSeaSkills();
 	if(as_skillState($skill[Deep Dark Visions]) == "missing")
 	{
-		as_collectCommand($item[Mer-kin darkbook], turns);
+		as_collectCommand($item[Mer-kin darkbook], turns, 1);
 	}
 	foreach sk, how in AS_SEA_SKILLS
 	{

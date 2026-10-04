@@ -316,6 +316,22 @@ boolean as_readDreadscroll()
 	{
 		return false;
 	}
+	//clues you can simply look up: a Mer-kin knucklebone gives clue 4 (it's used up; autosea_keepKnucklebones
+	//holds some back, e.g. for an 11,037 Leagues run), and Deep Dark Visions gives clue 3 even if its damage
+	//beats you up
+	item bone = $item[Mer-kin knucklebone];
+	if(!as_clueKnown(4) && available_amount(bone) > as_setting("keepKnucklebones", "0").to_int() && as_fetch(1, bone))
+	{
+		as_info("Using a Mer-kin knucklebone for dreadscroll clue 4.");
+		use(1, bone);
+	}
+	if(!as_clueKnown(3) && have_skill($skill[Deep Dark Visions]) && my_mp() >= mp_cost($skill[Deep Dark Visions]))
+	{
+		as_info("Casting Deep Dark Visions for dreadscroll clue 3.");
+		as_recover();
+		use_skill(1, $skill[Deep Dark Visions]);
+		as_recover();
+	}
 	//the worktea clue cuts 64 combinations to 16; wait for it unless told not to
 	if(!as_clueKnown(7) && !as_setting("readWithoutWorktea", "false").to_boolean())
 	{

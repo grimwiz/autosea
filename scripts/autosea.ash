@@ -158,16 +158,23 @@ void main(string... args)
 		}
 		else if(command == "collect")
 		{
-			//"collect <item name> [turns]"
+			//"collect [how many] <item name> [turns]"
 			int turns = 0;
+			int qty = 1;
+			int first = 1;
 			int last = count(words) - 1;
-			if(last >= 2 && words[last].to_int() > 0)
+			if(last >= 2 && words[1].to_int() > 0 && words[1] == words[1].to_int().to_string())
+			{
+				qty = words[1].to_int();
+				first = 2;
+			}
+			if(last > first && words[last].to_int() > 0 && words[last] == words[last].to_int().to_string())
 			{
 				turns = words[last].to_int();
 				last -= 1;
 			}
 			string name = "";
-			for i from 1 to last
+			for i from first to last
 			{
 				name += (name == "" ? "" : " ") + words[i];
 			}
@@ -177,7 +184,7 @@ void main(string... args)
 			}
 			else
 			{
-				as_collectCommand(name.to_item(), turns);
+				as_collectCommand(name.to_item(), turns, qty);
 			}
 		}
 		else

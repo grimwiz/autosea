@@ -60,6 +60,14 @@ After Mom, autosea tames the seahorse you need to reach the Mer-kin Deepcity (`a
 4. Throughout, throws a sea lasso once per underwater fight until you're an expert (20 points). Sea chaps add a point per throw. The sea cowboy hat adds another, but it takes the breathing hat slot, so autosea only wears it when breathing is already covered by an active effect or non-hat breathing gear. It never buys or uses anything just for that.
 5. In the Coral Corral, rings 3 sea cowbells at the wild seahorse, then lassos it. Taming costs no adventure. If the lasso isn't expert yet, it runs from the seahorse, which damage can't touch.
 
+## Dreadscroll clues you can look up
+
+Before guessing at the Mer-kin dreadscroll, autosea fills in the clues it can look up instead:
+- **Clue 4 from a Mer-kin knucklebone.** It's used up. `autosea_keepKnucklebones` keeps that many back, for example 1 for an 11,037 Leagues Under the Sea run.
+- **Clue 3 from Deep Dark Visions,** if you know the skill. The phrase comes even if its damage beats you up.
+
+With Deep Dark Visions permed and a knucklebone for each run, plus the worktea clue, a dreadscroll needs no guesses at all.
+
 ## The Mer-kin Deepcity (stage 1)
 
 Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is allowed per ascension, and its reward depends on your class. So `autosea_deepcityPath = auto` (the default) takes the Scholar route to Yog-Urt when you don't yet own your class's "of Hatred" piece. Stage 1 covers:
@@ -193,7 +201,9 @@ What it does:
 
 Dolphins matter more than item drop for rare drops in deep zones. A dolphin steals a missed drop at its base rate times the zone's pressure (1.5 times in the Library), whatever your item drop is. So chasing them roughly doubles your chances there.
 
-`autosea_wantItems` (comma-separated item names) keeps items wanted during normal farming and questing too. They count as worth `autosea_wantValue` (1,000,000) until you have one, or know the skill it teaches. That means their dropper gets tracked where it's worth it, and any a dolphin steals get chased.
+`autosea collect 5 Mer-kin knucklebone` collects until you hold that many, counting your closet and Hagnk's.
+
+`autosea_wantItems` (comma-separated item names, each optionally with `:how many`, e.g. `Mer-kin knucklebone:5`) keeps items wanted during normal farming and questing too. They count as worth `autosea_wantValue` (1,000,000) until you have one, or know the skill it teaches. That means their dropper gets tracked where it's worth it, and any a dolphin steals get chased.
 
 ### Sea skills
 

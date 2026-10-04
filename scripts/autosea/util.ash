@@ -457,12 +457,18 @@ boolean as_wanted(item it)
 	}
 	//the Mer-kin darkbook teaches Deep Dark Visions, a sea skill (autosea_wantSeaSkills)
 	boolean listed = it == as_collectItem || (it == $item[Mer-kin darkbook] && as_setting("wantSeaSkills", "true").to_boolean());
-	foreach i, name in get_property("autosea_wantItems").split_string(",")
+	int target = 1;
+	//entries are "item" or "item:how many to hold", e.g. "Mer-kin knucklebone:5"
+	foreach i, entry in get_property("autosea_wantItems").split_string(",")
 	{
-		matcher m = create_matcher("^\\s*(.*?)\\s*$", name);
+		matcher m = create_matcher("^\\s*(.*?)\\s*(?::\\s*(\\d+))?\\s*$", entry);
 		if(m.find() && m.group(1) != "" && m.group(1).to_item() == it)
 		{
 			listed = true;
+			if(m.group(2) != "")
+			{
+				target = m.group(2).to_int();
+			}
 		}
 	}
 	if(!listed)
@@ -474,7 +480,7 @@ boolean as_wanted(item it)
 	{
 		return !have_skill(teaches);
 	}
-	return it == as_collectItem || available_amount(it) + storage_amount(it) + display_amount(it) == 0;
+	return it == as_collectItem || available_amount(it) + storage_amount(it) + display_amount(it) < target;
 }
 
 int as_dropValue(item it)
