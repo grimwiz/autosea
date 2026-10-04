@@ -134,6 +134,15 @@ void main(string... args)
 		as_printStatus();
 		return;
 	}
+	//In 11,037 Leagues Under the Sea the Council's quests differ (both Elder Gods, five pearls, then the Nautical
+	//Seaceress), so autosea's aftercore quest route would make the wrong choices. Farming is still fine.
+	if(my_path() == $path[11,037 Leagues Under the Sea] && command != "farm")
+	{
+		as_warn("You're in 11,037 Leagues Under the Sea. autosea's quest route is for aftercore and doesn't fit this path. "
+			+ "Use UnderTheSea (git checkout https://github.com/tottington/UnderTheSea lowIOTM) for the run; "
+			+ "\"autosea farm\" still works.");
+		return;
+	}
 
 	if(!as_clearPendingEncounter())
 	{

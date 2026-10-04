@@ -4,6 +4,10 @@ An autoscend-style KoLmafia script for The Sea. Before every adventure it re-rea
 
 **Status:** in development. Version 1 targets the Sea Monkee rescues up to Mom, plus the side quests that make the trip cheaper: the Skate Park, the sushi-rolling mat and the aerated diving helmet.
 
+## 11,037 Leagues Under the Sea
+
+Autosea is for the Sea in aftercore. In the 11,037 Leagues Under the Sea challenge path, the Council's quests are different: both Elder Gods, five unblemished pearls, then the Nautical Seaceress. So autosea detects the path and won't run its quest route there. Use [UnderTheSea](https://github.com/tottington/UnderTheSea/tree/lowIOTM) (`git checkout https://github.com/tottington/UnderTheSea lowIOTM`), the Ascension Speed Society's script for the path. `autosea farm` still works in the path.
+
 ## Install
 
 In KoLmafia's command line:
