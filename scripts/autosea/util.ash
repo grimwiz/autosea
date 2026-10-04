@@ -328,6 +328,9 @@ boolean[location] as_reportedZones;
 // the last zone the survival check refused, so the quest loop can farm to get stronger
 location as_lastUnsafeZone = $location[none];
 
+// turns the quest must wait (e.g. Deep-Tainted Mind before a dreadscroll re-read); the quest loop farms them
+int as_waitTurns = 0;
+
 // the hardest-hitting monster in the zone and its expected damage per round, with current gear and buffs
 monster as_worstMonster;
 int as_worstDamage(location loc)

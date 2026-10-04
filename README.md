@@ -70,7 +70,19 @@ Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is a
 - with the dreadscroll in hand, uses a Mer-kin healscroll in a fight for clue 2, and a Mer-kin killscroll for clue 5;
 - answers the Catalog Card (choice 704) by reading an unread book. At 100% vocabulary only the three clue books remain, for clues 1, 6 and 8.
 
-It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 4 need a darkbook skill and a rare knucklebone, so they aren't farmed. `autosea status` lists the known clues. Reading the dreadscroll and the Yog-Urt fight come in a later stage.
+It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 4 need a darkbook skill and a rare knucklebone, so they aren't farmed. `autosea status` lists the known clues.
+
+**Stage 3, the High Priest and Yog-Urt:**
+
+- **Reading the dreadscroll:** once the worktea clue (7) is known, autosea fills in the known clues and guesses the rest. Each wrong read is followed by Deep-Tainted Mind, and its length shows how many phrases were wrong. Every new guess must agree with all the earlier results, so the answer is found in a few reads. Autosea farms through each Deep-Tainted Mind wait. Set `autosea_readWithoutWorktea = true` to guess clue 7 as well.
+- **Yog-Urt:** for the first rounds she casts More Like a Suckrament (5 rounds with 3 prayerbeads). During it your skills are disabled, you lose 80–90% of your HP every round, and **any damage to her kills you**. So before entering, autosea:
+  - removes your familiar and every damage-dealing effect;
+  - refuses to start if any gear has a damage aura or thorns;
+  - wears the Scholar's Vestments and 3 prayerbeads;
+  - makes sure it has a different healing item for every Suckrament round (each combat item works only once in the fight);
+  - tops up MP.
+
+  In the fight it heals each Suckrament round (healscroll, band-aid, red pixel potion, poultice and so on, never anything that deals damage), then kills her with your best spell. `autosea_yogUrt = dryrun` checks everything and stops before entering; `false` skips her. After a loss it won't try again that run.
 
 ## Unblemished pearls
 

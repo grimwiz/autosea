@@ -11,19 +11,6 @@ boolean as_deepcityOpen()
 	return get_property("seahorseName") != "" && get_property("merkinQuestPath") != "done";
 }
 
-item as_hatredItem()
-{
-	switch(my_class())
-	{
-		case $class[Seal Clubber]: return $item[Cold Stone of Hatred];
-		case $class[Turtle Tamer]: return $item[Girdle of Hatred];
-		case $class[Pastamancer]: return $item[Staff of Simmering Hatred];
-		case $class[Sauceror]: return $item[Pantaloons of Hatred];
-		case $class[Disco Bandit]: return $item[Fuzzy Slippers of Hatred];
-		case $class[Accordion Thief]: return $item[Lens of Hatred];
-	}
-	return $item[none];
-}
 
 // "scholar", "gladiator" or "none". auto: scholar when this class's Hatred piece is missing.
 string as_deepcityPath()
@@ -211,4 +198,364 @@ boolean as_merkinLibrary()
 	string goal = item_amount($item[Mer-kin dreadscroll]) == 0 ? "the dreadscroll" : "dreadscroll clues";
 	as_info("Mer-kin Library: looking for " + goal + ".");
 	return as_seaAdv($location[Mer-kin Library], "+outfit Mer-kin Scholar's Vestments", "as_libraryFilter");
+}
+
+// ---------------------------------------------------------------- stage 3a: reading the dreadscroll
+// Fill in every known clue and guess the rest. Each wrong read costs a turn plus Deep-Tainted Mind
+// (about 3 turns per wrong phrase) before you can read again. The effect's length tells how many phrases
+// were wrong, so each new guess is chosen to agree with every earlier result (like Mastermind).
+// Guesses are stored in autosea_dreadGuesses as "12341234:wrong,...".
+
+int as_deepTaintedTurns()
+{
+	return have_effect($effect[Deep-Tainted Mind]);
+}
+
+int[int] as_dreadDigits(string s)
+{
+	int[int] d;
+	for i from 0 to 7
+	{
+		d[i + 1] = s.char_at(i).to_int();
+	}
+	return d;
+}
+
+// the first full answer consistent with known clues and every earlier wrong read
+string as_nextDreadGuess()
+{
+	int[int] known;
+	int[int] unknown;
+	for n from 1 to 8
+	{
+		known[n] = get_property("dreadScroll" + n).to_int();
+		if(known[n] == 0)
+		{
+			unknown[count(unknown)] = n;
+		}
+	}
+	string[int] history = get_property("autosea_dreadGuesses").split_string(",");
+	int k = count(unknown);
+	int combos = 1;
+	for i from 1 to k
+	{
+		combos *= 4;
+	}
+	for c from 0 to combos - 1
+	{
+		int[int] answer;
+		foreach n, v in known
+		{
+			answer[n] = v;
+		}
+		int rest = c;
+		foreach i, n in unknown
+		{
+			answer[n] = rest % 4 + 1;
+			rest = rest / 4;
+		}
+		boolean consistent = true;
+		foreach i, entry in history
+		{
+			string[int] parts = entry.split_string(":");
+			if(count(parts) < 2 || length(parts[0]) != 8)
+			{
+				continue;
+			}
+			int[int] g = as_dreadDigits(parts[0]);
+			int differ = 0;
+			for n from 1 to 8
+			{
+				if(g[n] != answer[n])
+				{
+					differ += 1;
+				}
+			}
+			if(differ != parts[1].to_int())
+			{
+				consistent = false;
+				break;
+			}
+		}
+		if(consistent)
+		{
+			string s = "";
+			for n from 1 to 8
+			{
+				s += answer[n];
+			}
+			return s;
+		}
+	}
+	return "";
+}
+
+// set when autosea must wait (e.g. Deep-Tainted Mind) and the quest loop should farm meanwhile
+boolean as_readDreadscroll()
+{
+	if(!as_deepcityOpen() || as_deepcityPath() != "scholar" || get_property("isMerkinHighPriest").to_boolean())
+	{
+		return false;
+	}
+	if(item_amount($item[Mer-kin dreadscroll]) == 0 || !as_libraryCluesDone())
+	{
+		return false;
+	}
+	//the worktea clue cuts 64 combinations to 16; wait for it unless told not to
+	if(!as_clueKnown(7) && !as_setting("readWithoutWorktea", "false").to_boolean())
+	{
+		return false;
+	}
+	if(as_deepTaintedTurns() > 0)
+	{
+		as_waitTurns = as_deepTaintedTurns();
+		as_info("Deep-Tainted Mind for " + as_waitTurns + " more turns before the dreadscroll can be read again.");
+		return false;
+	}
+	if(my_adventures() < 3)
+	{
+		return false;
+	}
+	string guess = as_nextDreadGuess();
+	if(guess == "")
+	{
+		as_warn("No dreadscroll answer fits the known clues and earlier reads; check the dreadScroll settings.");
+		return false;
+	}
+	as_ensureFishy();	//a wrong read costs 2 turns without Fishy
+	as_info("Reading the Mer-kin dreadscroll: " + guess + ".");
+	visit_url("inv_use.php?pwd&which=3&whichitem=" + $item[Mer-kin dreadscroll].to_int());
+	string url = "choice.php?pwd&whichchoice=703&option=1";
+	for n from 1 to 8
+	{
+		url += "&pro" + n + "=" + guess.char_at(n - 1);
+	}
+	visit_url(url);
+	if(get_property("isMerkinHighPriest").to_boolean())
+	{
+		as_info("You're the Mer-kin High Priest now.");
+		return true;
+	}
+	int taint = as_deepTaintedTurns();
+	int wrong = taint > 0 ? (taint + 1) / 3 : 0;
+	if(wrong == 0)
+	{
+		as_warn("The dreadscroll read didn't give a result autosea recognises; stopping the guessing.");
+		set_property("autosea_readWithoutWorktea", "false");
+		return false;
+	}
+	string history = get_property("autosea_dreadGuesses");
+	set_property("autosea_dreadGuesses", (history == "" ? "" : history + ",") + guess + ":" + wrong);
+	as_info(wrong + " phrase" + (wrong == 1 ? " was" : "s were") + " wrong; next guess after Deep-Tainted Mind wears off.");
+	return true;
+}
+
+// ---------------------------------------------------------------- stage 3b: Yog-Urt
+// Yog-Urt: 750 HP, physical-immune, stun-immune. Her More Like a Suckrament lasts 8 rounds minus one per
+// equipped Mer-kin prayerbeads (5 with 3 beads). While it lasts: skills are disabled, base stats are capped at
+// 30, you lose 80-90% of your HP each round, and ANY damage to her (yours or your familiar's) kills you.
+// So: no familiar, no damage-dealing effects or gear, a different healing item each round (each combat item
+// can only be used once in the fight), then spells once the Suckrament ends.
+
+effect[int] AS_DAMAGE_EFFECTS;
+AS_DAMAGE_EFFECTS[0] = $effect[Scarysauce];
+AS_DAMAGE_EFFECTS[1] = $effect[Jalape&ntilde;o Saucesphere];
+AS_DAMAGE_EFFECTS[2] = $effect[Spiky Shell];
+AS_DAMAGE_EFFECTS[3] = $effect[Psalm of Pointiness];
+AS_DAMAGE_EFFECTS[4] = $effect[Mayeaugh];
+AS_DAMAGE_EFFECTS[5] = $effect[Feeling Nervous];
+
+// healing items in preference order, with the least they restore (99999 = full HP)
+int[item] AS_YOG_HEALERS;
+AS_YOG_HEALERS[$item[Mer-kin healscroll]] = 99999;
+AS_YOG_HEALERS[$item[soggy used band-aid]] = 99999;
+AS_YOG_HEALERS[$item[red pixel potion]] = 100;
+AS_YOG_HEALERS[$item[filthy poultice]] = 80;
+AS_YOG_HEALERS[$item[gauze garter]] = 80;
+AS_YOG_HEALERS[$item[Doc Galaktik's Ailment Ointment]] = 35;
+
+boolean[item] as_yogUsed;
+boolean as_yogLost = false;
+
+int as_beadsWorn()
+{
+	int n = 0;
+	foreach s in $slots[acc1, acc2, acc3]
+	{
+		if(equipped_item(s) == $item[Mer-kin prayerbeads])
+		{
+			n += 1;
+		}
+	}
+	return n;
+}
+
+string as_yogFilter(int round, monster enemy, string text)
+{
+	if(round <= 1)
+	{
+		clear(as_yogUsed);
+	}
+	int suckrament = 8 - as_beadsWorn();
+	if(round <= suckrament)
+	{
+		//heal with an unused item that covers the damage; never anything that deals damage
+		int need = my_maxhp() - my_hp();
+		item best = $item[none];
+		foreach it, minRestore in AS_YOG_HEALERS
+		{
+			if(!(as_yogUsed contains it) && item_amount(it) > 0 && minRestore >= need)
+			{
+				best = it;
+				break;
+			}
+		}
+		if(best == $item[none])
+		{
+			foreach it, minRestore in AS_YOG_HEALERS
+			{
+				if(!(as_yogUsed contains it) && item_amount(it) > 0)
+				{
+					best = it;
+					break;
+				}
+			}
+		}
+		if(best == $item[none])
+		{
+			return "abort";	//nothing safe left to do
+		}
+		as_yogUsed[best] = true;
+		return "item " + best;
+	}
+	foreach sk in $skills[Saucegeyser, Weapon of the Pastalord, Saucestorm, Cannelloni Cannon, Stream of Sauce]
+	{
+		if(have_skill(sk) && my_mp() >= mp_cost(sk))
+		{
+			return "skill " + sk;
+		}
+	}
+	return "";
+}
+
+// everything checked before entering; returns a reason it isn't safe, or ""
+string as_yogProblem()
+{
+	if(my_familiar() != $familiar[none])
+	{
+		return "a familiar is out";
+	}
+	foreach i, eff in AS_DAMAGE_EFFECTS
+	{
+		if(have_effect(eff) > 0)
+		{
+			return eff + " is active";
+		}
+	}
+	foreach mod in $strings[Damage Aura, Sporadic Damage Aura, Thorns]
+	{
+		if(numeric_modifier(mod) != 0)
+		{
+			return "your gear or effects have " + mod;
+		}
+	}
+	if(as_beadsWorn() < 3)
+	{
+		return "fewer than 3 Mer-kin prayerbeads are worn";
+	}
+	if(!have_outfit("Mer-kin Scholar's Vestments") || !is_wearing_outfit("Mer-kin Scholar's Vestments"))
+	{
+		return "the Mer-kin Scholar's Vestments aren't worn";
+	}
+	int healers = 0;
+	foreach it in AS_YOG_HEALERS
+	{
+		if(item_amount(it) > 0)
+		{
+			healers += 1;
+		}
+	}
+	if(healers < 8 - as_beadsWorn())
+	{
+		return "only " + healers + " different healing items (need " + (8 - as_beadsWorn()) + ")";
+	}
+	return "";
+}
+
+boolean as_yogUrt()
+{
+	if(as_yogLost || !as_deepcityOpen() || !get_property("isMerkinHighPriest").to_boolean() || get_property("yogUrtDefeated").to_boolean())
+	{
+		return false;
+	}
+	string mode = as_setting("yogUrt", "true");
+	if(mode == "false")
+	{
+		return false;
+	}
+	//prepare: no familiar, no damage sources, Scholar's Vestments plus 3 prayerbeads, healers in hand
+	use_familiar($familiar[none]);
+	foreach i, eff in AS_DAMAGE_EFFECTS
+	{
+		if(have_effect(eff) > 0)
+		{
+			cli_execute("uneffect " + eff);
+		}
+	}
+	as_fetch(1, $item[soggy used band-aid]);
+	if(item_amount($item[soggy used band-aid]) == 0 && shop_amount($item[soggy used band-aid]) > 0)
+	{
+		take_shop(1, $item[soggy used band-aid]);
+	}
+	as_acquire(3, $item[Mer-kin prayerbeads]);
+	maximize("sea, mp, +outfit Mer-kin Scholar's Vestments, -familiar", false);
+	foreach s in $slots[acc1, acc2, acc3]
+	{
+		equip(s, $item[Mer-kin prayerbeads]);
+	}
+	restore_mp(min(my_maxmp(), 200));
+	restore_hp(my_maxhp());
+	string problem = as_yogProblem();
+	if(problem != "")
+	{
+		as_warn("Not fighting Yog-Urt yet: " + problem + ".");
+		return false;
+	}
+	if(mode == "dryrun")
+	{
+		as_info("Yog-Urt dry run: ready. Healers in order: " + count(AS_YOG_HEALERS) + " kinds checked, " + (8 - as_beadsWorn())
+			+ " rounds of Suckrament, then spells. Set autosea_yogUrt = true to fight.");
+		return false;
+	}
+	as_ensureFishy();
+	as_info("Entering the Mer-kin Temple to face Yog-Urt.");
+	//take the Temple choices here, so the fight is always run with as_yogFilter, never handed to a CCS
+	string choiceScript = get_property("choiceAdventureScript");
+	set_property("choiceAdventureScript", "");
+	visit_url("sea_merkin.php?action=temple");
+	//Temple choices 710 (Enter), 711 (Drink), 712 (IÄ YOG-URT!) lead into the fight; 713 after it
+	for i from 1 to 4
+	{
+		if(handling_choice() && $ints[710, 711, 712] contains last_choice())
+		{
+			run_choice(1);
+		}
+	}
+	if(current_round() > 0)
+	{
+		run_combat("as_yogFilter");
+	}
+	if(handling_choice() && last_choice() == 713)
+	{
+		run_choice(1);
+	}
+	set_property("choiceAdventureScript", choiceScript);
+	if(get_property("yogUrtDefeated").to_boolean() || available_amount(as_hatredItem()) > 0)
+	{
+		as_info("Yog-Urt is defeated.");
+		return true;
+	}
+	as_yogLost = true;
+	as_warn("The Yog-Urt fight didn't end in a win. Not trying again this run; check the CLI and session log.");
+	return true;
 }

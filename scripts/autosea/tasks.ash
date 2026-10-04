@@ -835,6 +835,21 @@ boolean as_seahorse()
 	return as_seaAdv($location[The Mer-Kin Outpost], as_seahorseGear(), "as_seahorseFilter");
 }
 
+// this class's Temple reward on the Scholar route (Yog-Urt)
+item as_hatredItem()
+{
+	switch(my_class())
+	{
+		case $class[Seal Clubber]: return $item[Cold Stone of Hatred];
+		case $class[Turtle Tamer]: return $item[Girdle of Hatred];
+		case $class[Pastamancer]: return $item[Staff of Simmering Hatred];
+		case $class[Sauceror]: return $item[Pantaloons of Hatred];
+		case $class[Disco Bandit]: return $item[Fuzzy Slippers of Hatred];
+		case $class[Accordion Thief]: return $item[Lens of Hatred];
+	}
+	return $item[none];
+}
+
 // ---------------------------------------------------------------- engine hooks
 
 string[int] AS_TASKS;
@@ -855,6 +870,8 @@ AS_TASKS[13] = "as_schoolGear";		//defined in deepcity.ash
 AS_TASKS[14] = "as_merkinVocab";
 AS_TASKS[15] = "as_workteaClue";
 AS_TASKS[16] = "as_merkinLibrary";
+AS_TASKS[17] = "as_readDreadscroll";
+AS_TASKS[18] = "as_yogUrt";
 
 string[int] as_taskOrder()
 {
@@ -864,7 +881,7 @@ string[int] as_taskOrder()
 string as_stateSignature()
 {
 	string sig = "";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath]
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
 	{
 		sig += get_property(prop) + "|";
 	}
@@ -913,6 +930,8 @@ void as_printStatus()
 			clues += get_property("dreadScroll" + n).to_int() != 0 ? " " + n : "";
 		}
 		print("  Dreadscroll clues known:" + (clues == "" ? " none" : clues) + " (the Library gives 1, 2, 5, 6, 8)", "black");
+		line("Mer-kin High Priest", get_property("isMerkinHighPriest").to_boolean());
+		line("Yog-Urt (" + as_hatredItem() + ")", get_property("yogUrtDefeated").to_boolean() || available_amount(as_hatredItem()) > 0);
 	}
 	print("Pearls found today:", "blue");
 	foreach loc in $locations[The Briniest Deepests, The Marinara Trench, Anemone Mine, Madness Reef, The Dive Bar]

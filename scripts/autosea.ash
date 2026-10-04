@@ -72,8 +72,21 @@ void as_questLoop()
 	while(true)
 	{
 		as_lastUnsafeZone = $location[none];
+		as_waitTurns = 0;
 		as_run();
 		location blocked = as_lastUnsafeZone;
+		if(as_waitTurns > 0 && my_adventures() > as_advReserve() + 2)
+		{
+			//something has to wear off before the quest can continue: farm in the meantime
+			as_info("Farming " + as_waitTurns + " turns while waiting.");
+			int waited = my_turncount();
+			as_farm(as_waitTurns);
+			if(my_turncount() == waited)
+			{
+				return;
+			}
+			continue;
+		}
 		if(blocked == $location[none] || !as_setting("farmWhenBlocked", "true").to_boolean())
 		{
 			return;

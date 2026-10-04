@@ -105,6 +105,12 @@ void main(int choice, string page)
 			run_choice(pick > 0 ? pick : fallback > 0 ? fallback : 1);
 			return;
 		}
+		case 710:	//Temple of Hatred: enter, drink, call her, and afterwards bring her down
+		case 711:
+		case 712:
+		case 713:
+			run_choice(1);
+			return;
 		case 403:	//Picking Sides (Skate Park): the ice skates
 			run_choice(1);
 			return;
