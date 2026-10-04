@@ -253,8 +253,8 @@ boolean as_collect(int qty, item it, as_source src, int limit)
 		as_warn("No adventures to collect " + it + " with (" + my_adventures() + " left, reserve " + as_advReserve() + ").");
 		return false;
 	}
-	as_info("Collecting " + (qty - item_amount(it)) + " " + it + " in " + src.loc + " (about " + ceil(src.turns) + " turns each, "
-		+ src.cost + " meat each in lost farming, against " + mall_price(it) + " in the mall).");
+	as_info("Collecting " + (qty - item_amount(it)) + " " + it + " in " + src.loc + " (about " + ceil(src.turns) + " turns each"
+		+ (as_wanted(it) ? ")." : ", " + src.cost + " meat each in lost farming, against " + mall_price(it) + " in the mall)."));
 	as_collecting = true;
 	as_turnValueFloor = max(oldFloor, round(as_dropValue(it) / max(1.0, src.turns)));
 	monster oldTarget = as_trackMonster;
@@ -528,6 +528,33 @@ item as_spleenToBuy(int room)
 	return best;
 }
 
+// Spleen to keep for sea jelly (1 spleen, 10 turns of Fishy). Without Fishy every sea adventure costs 2 turns,
+// so 1 spleen of jelly saves up to 10 turns, more than any spleen item gives in adventures. Keep enough to
+// cover today's adventures (plus moreAdventures about to be gained) that the other Fishy sources won't:
+// Fishy already running, the Skate Park lutz, the fishy pipe, and sushi while there's stomach room.
+int as_jellySpleenReserve(float moreAdventures)
+{
+	if(!as_setting("useSpleen", "true").to_boolean())
+	{
+		return 0;
+	}
+	float covered = have_effect($effect[Fishy]);
+	if(get_property("skateParkStatus") == "ice" && !get_property("_skateBuff1").to_boolean())
+	{
+		covered += 30;
+	}
+	if(!get_property("_fishyPipeUsed").to_boolean() && available_amount($item[fishy pipe]) > 0)
+	{
+		covered += 10;
+	}
+	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled())
+	{
+		covered += 45 * floor((fullness_limit() - my_fullness() - as_fullnessReserve()) / 3);
+	}
+	float uncovered = my_adventures() + moreAdventures - covered;
+	return uncovered <= 0 ? 0 : ceil(uncovered / 10);
+}
+
 boolean as_dietSpleen()
 {
 	if(!as_setting("diet", "true").to_boolean() || !as_setting("useSpleen", "true").to_boolean())
@@ -537,7 +564,18 @@ boolean as_dietSpleen()
 	boolean acted = false;
 	while(spleen_limit() - my_spleen_use() > 0)
 	{
-		int room = spleen_limit() - my_spleen_use();
+		int keep = as_jellySpleenReserve(8);	//a typical spleen item gives about 7.5 adventures
+		int room = spleen_limit() - my_spleen_use() - keep;
+		if(room <= 0)
+		{
+			as_spleenWhy = "keeping it for sea jelly, since nothing else will give Fishy for today's adventures";
+			if(!get_property("_autosea_spleenWhySaid").to_boolean())
+			{
+				as_info("Leaving " + (spleen_limit() - my_spleen_use()) + " spleen free: " + as_spleenWhy + ".");
+				set_property("_autosea_spleenWhySaid", "true");
+			}
+			break;
+		}
 		item best = $item[none];
 		float bestRatio = 0;
 		foreach it, n in get_inventory()
@@ -762,7 +800,8 @@ boolean as_chaseDolphin(location loc)
 		return false;
 	}
 	int value = as_dropValue(stolen);
-	int cost = as_whistleCost() + as_zoneWorth(loc);
+	//the whistle fight takes a turn: worth what a turn here earns, or more while collecting something wanted
+	int cost = as_whistleCost() + max(as_zoneWorth(loc), as_turnValueFloor);
 	if(value <= cost)
 	{
 		as_debug("A dolphin has your " + stolen + " (" + value + " meat): not worth a whistle and a turn (" + cost + ").");
