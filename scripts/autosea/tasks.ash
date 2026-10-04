@@ -176,6 +176,40 @@ boolean as_spleenCandidate(item it, int room)
 	return !it.tradeable || mall_price(it) <= maxValue;
 }
 
+// spleen items that give adventures and sell in quantity (4 spleen, 7-8 adventures each)
+boolean[item] AS_SPLEEN_BUY = $items[strange paste, demonic paste, ectoplasmic paste, elemental paste, Crimbo paste,
+	grim fairy tale, Unconscious Collective Dream Jar, powdered gold];
+
+// the cheapest of those to buy, if its cost per adventure is below what a farm turn earns
+item as_spleenToBuy(int room)
+{
+	if(!as_setting("buySpleen", "true").to_boolean() || !as_buyingAllowed())
+	{
+		return $item[none];
+	}
+	item best = $item[none];
+	float bestCost = as_bestTurnValue();
+	foreach it in AS_SPLEEN_BUY
+	{
+		if(it.spleen > room || it.levelreq > my_level() || as_avgAdventures(it) <= 0)
+		{
+			continue;
+		}
+		int price = mall_price(it);
+		float perAdv = price / as_avgAdventures(it);
+		if(price > 0 && price <= as_setting("spleenMaxValue", "5000").to_int() && perAdv < bestCost)
+		{
+			best = it;
+			bestCost = perAdv;
+		}
+	}
+	if(best != $item[none] && !as_acquire(1, best))
+	{
+		return $item[none];
+	}
+	return best;
+}
+
 boolean as_dietSpleen()
 {
 	if(!as_setting("diet", "true").to_boolean() || !as_setting("useSpleen", "true").to_boolean())
@@ -207,6 +241,10 @@ boolean as_dietSpleen()
 			&& as_worthBuff(as_costPerTurn($item[lustrous oyster egg], zone), zone))
 		{
 			best = $item[lustrous oyster egg];	//+50% Meat Drop for 50 turns
+		}
+		if(best == $item[none])
+		{
+			best = as_spleenToBuy(room);
 		}
 		if(best == $item[none])
 		{
