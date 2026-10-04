@@ -17,7 +17,7 @@ Update later with `git update`.
 ## Use
 
 ```
-autosea          run until Mom is rescued, adventures run low, or something is missing
+autosea          do the Sea Monkee quest; once Mom is rescued, carry on farming (autosea_farmAfterQuest)
 autosea status   show progress without adventuring
 autosea farm     farm meat and stats in the best safe sea zone (autosea farm 50 for 50 turns)
 ```
