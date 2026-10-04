@@ -723,6 +723,14 @@ string as_seahorseGear()
 	//sea chaps and the sea cowboy hat each add a point per lasso throw. The hat takes the breathing hat slot,
 	//so it's only worn when breathing is already covered some other way.
 	string gear = available_amount($item[sea chaps]) > 0 ? "+equip sea chaps" : "";
+	//tempura air (Pumped Stomach: 20 turns of breathing, no organ, untradeable) frees the hat slot for the
+	//whole of lasso practice. Only air you already own: batter sells for far more than it saves.
+	if(available_amount($item[sea cowboy hat]) > 0 && !as_breathingWithoutHat() && as_setting("useTempuraAir", "true").to_boolean()
+		&& as_fetch(1, $item[tempura air]))
+	{
+		as_info("Using a tempura air so the sea cowboy hat can join lasso practice.");
+		use(1, $item[tempura air]);
+	}
 	if(available_amount($item[sea cowboy hat]) > 0 && as_breathingWithoutHat())
 	{
 		gear += (gear == "" ? "" : ", ") + "+equip sea cowboy hat";
