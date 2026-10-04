@@ -129,14 +129,19 @@ boolean as_sushiMatInstalled()
 	return get_property("hasSushiMat").to_boolean() || (get_campground() contains $item[sushi-rolling mat]);
 }
 
-// fullness held back for quest steps that need to eat: the worktea clue needs a self-rolled nigiri
+item as_hatredItem();
+
+// fullness held back for quest steps that need to eat: the worktea clue (a self-rolled nigiri) is needed on
+// every Scholar route, so hold room from the moment that route is planned until the clue is known
 int as_fullnessReserve()
 {
-	if(get_property("dreadScroll7").to_int() == 0 && available_amount($item[Mer-kin dreadscroll]) > 0)
+	if(get_property("dreadScroll7").to_int() != 0 || get_property("isMerkinHighPriest").to_boolean())
 	{
-		return 2;
+		return 0;
 	}
-	return 0;
+	string route = as_setting("deepcityPath", "auto");
+	boolean scholar = route == "scholar" || (route == "auto" && as_hatredItem() != $item[none] && available_amount(as_hatredItem()) == 0);
+	return scholar ? 2 : 0;
 }
 
 // ---------------------------------------------------------------- Fishy (halves the cost of sea adventures)

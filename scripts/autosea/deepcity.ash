@@ -123,7 +123,9 @@ boolean as_workteaTried = false;
 
 boolean as_workteaClue()
 {
-	if(as_workteaTried || !as_deepcityOpen() || as_deepcityPath() != "scholar" || get_property("dreadScroll7").to_int() != 0)
+	//doesn't need the Deepcity or the dreadscroll: do it as soon as the Scholar route is planned and there's room
+	if(as_workteaTried || as_deepcityPath() != "scholar" || get_property("dreadScroll7").to_int() != 0
+		|| get_property("isMerkinHighPriest").to_boolean() || get_property("questS02Monkees") != "finished")
 	{
 		return false;
 	}
