@@ -396,16 +396,45 @@ AS_DAMAGE_EFFECTS[3] = $effect[Psalm of Pointiness];
 AS_DAMAGE_EFFECTS[4] = $effect[Mayeaugh];
 AS_DAMAGE_EFFECTS[5] = $effect[Feeling Nervous];
 
+// items already used this fight: each works only once
+boolean[item] as_yogUsed;
+boolean as_yogLost = false;
+
 // Healing items with the least each restores (99999 = full HP). Each item works only once per fight.
 int[item] AS_YOG_HEALERS = {
 	$item[Mer-kin healscroll]: 99999, $item[soggy used band-aid]: 99999, $item[scented massage oil]: 99999,
 	$item[New Age healing crystal]: 500, $item[sew-on bandage]: 300, $item[extra-strength red potion]: 200,
 	$item[plaid bandage]: 120, $item[red pixel potion]: 100, $item[red potion]: 100, $item[filthy poultice]: 80,
-	$item[gauze garter]: 80, $item[Doc Galaktik's Ailment Ointment]: 35, $item[cast]: 15
+	$item[gauze garter]: 80, $item[cartoon heart]: 40, $item[green pixel potion]: 40, $item[palm-frond fan]: 35,
+	$item[red plastic oyster egg]: 35, $item[Doc Galaktik's Ailment Ointment]: 35, $item[Doc Galaktik's Homeopathic Elixir]: 18,
+	$item[cast]: 15
 };
 
-// cheap, plentiful big healers to buy when the ones you own can't cover the Suckrament, cheapest first
-item[int] AS_YOG_BUY = {$item[New Age healing crystal], $item[scented massage oil], $item[sew-on bandage]};
+// cheap healers to buy when the ones you own can't cover the Suckrament (or leave too little for the kill), cheapest
+// first: the small ones suit the Mer-kin gutgirdle's ~27-a-round loss and keep the full-HP ones for the kill
+item[int] AS_YOG_BUY = {$item[New Age healing crystal], $item[palm-frond fan], $item[cartoon heart], $item[green pixel potion],
+	$item[scented massage oil], $item[sew-on bandage]};
+
+// delevelers to throw alongside each Suckrament heal (Funkslinging): they lower her attack, and so her hits in the
+// kill, without damaging her. The lasso's cut is a percentage, so it goes first; the mouthsoap's is flat.
+item[int] AS_YOG_DELEVEL = {$item[sea lasso], $item[Mer-kin mouthsoap]};
+
+// an unused deleveler to pair with a healer, or $item[none]
+item as_yogDeleveler()
+{
+	if(!have_skill($skill[Ambidextrous Funkslinging]))
+	{
+		return $item[none];
+	}
+	foreach i, it in AS_YOG_DELEVEL
+	{
+		if(!(as_yogUsed contains it) && item_amount(it) > 0)
+		{
+			return it;
+		}
+	}
+	return $item[none];
+}
 
 // combat MP restorers for after the Suckrament (it caps Mysticality at 30, cutting your MP), largest first
 item[int] AS_YOG_MP = {
@@ -414,8 +443,6 @@ item[int] AS_YOG_MP = {
 	$item[Knob Goblin superseltzer], $item[blue potion], $item[gold star]
 };
 
-boolean[item] as_yogUsed;
-boolean as_yogLost = false;
 
 int as_beadsWorn()
 {
@@ -496,8 +523,15 @@ string as_yogFilter(int round, monster enemy, string text)
 		if(it != $item[none])
 		{
 			as_yogUsed[it] = true;
-			//", none": exactly one item. With Funkslinging, KoLmafia would otherwise add a second copy (each item only
-			//works once this fight) or a damage item such as a seal tooth, which kills you during the Suckrament.
+			//with Funkslinging, throw a deleveler with it; otherwise ", none": exactly one item. Left alone, KoLmafia
+			//would add a second copy (each item only works once this fight) or a damage item such as a seal tooth,
+			//which kills you during the Suckrament.
+			item delevel = as_yogDeleveler();
+			if(delevel != $item[none])
+			{
+				as_yogUsed[delevel] = true;
+				return "item " + it + ", " + delevel;
+			}
 			return "item " + it + ", none";
 		}
 		//no single healer covers it: with Funkslinging, two of the biggest together
@@ -543,6 +577,12 @@ string as_yogFilter(int round, monster enemy, string text)
 						return "item " + it + ", " + mpItem;
 					}
 				}
+			}
+			item delevel = as_yogDeleveler();
+			if(delevel != $item[none])
+			{
+				as_yogUsed[delevel] = true;
+				return "item " + it + ", " + delevel;
 			}
 			return "item " + it + ", none";
 		}
@@ -680,6 +720,10 @@ boolean as_yogUrt()
 		take_shop(1, $item[soggy used band-aid]);
 	}
 	as_acquire(3, $item[Mer-kin prayerbeads]);
+	if(have_skill($skill[Ambidextrous Funkslinging]))
+	{
+		as_acquire(1, $item[Mer-kin mouthsoap]);	//a deleveler to pair with a heal (about 110)
+	}
 	//fight gear: spell power, and damage reduction against her hits; nothing that caps or cuts your stats or adds
 	//Monster Level. Max HP stays normal: the big healers cover the Suckrament, and HP carries you through the kill.
 	//The Mer-kin gutgirdle (-300 max HP, no stat penalty) is the best answer to the Suckrament: with base stats capped
