@@ -405,6 +405,13 @@ AS_YOG_HEALERS[$item[filthy poultice]] = 80;
 AS_YOG_HEALERS[$item[gauze garter]] = 80;
 AS_YOG_HEALERS[$item[Doc Galaktik's Ailment Ointment]] = 35;
 
+// combat MP restorers for after the Suckrament (it caps Mysticality at 30, cutting your MP), largest first
+item[int] AS_YOG_MP = {
+	$item[high-pressure seltzer bottle], $item[fancy blue potion], $item[unrefined Mountain Stream syrup],
+	$item[blue pixel potion], $item[bottle of Monsieur Bubble], $item[Mountain Stream soda], $item[magical mystery juice],
+	$item[Knob Goblin superseltzer], $item[blue potion], $item[gold star]
+};
+
 boolean[item] as_yogUsed;
 boolean as_yogLost = false;
 
@@ -457,14 +464,34 @@ string as_yogFilter(int round, monster enemy, string text)
 		//works once this fight) or a damage item such as a seal tooth, which kills you during the Suckrament.
 		return "item " + best + ", none";
 	}
-	foreach sk in $skills[Saucegeyser, Weapon of the Pastalord, Saucestorm, Cannelloni Cannon, Stream of Sauce]
+	//Yog-Urt is immune to physical damage and soft-caps damage at 100 a hit, so the cheapest spell that reaches ~100
+	//kills about as fast as the dearest one: Saucestorm (6 MP) first
+	skill spell = $skill[none];
+	foreach sk in $skills[Saucestorm, Saucegeyser, Cannelloni Cannon, Weapon of the Pastalord, Stream of Sauce]
 	{
-		if(have_skill(sk) && my_mp() >= mp_cost(sk))
+		if(have_skill(sk))
 		{
-			return "skill " + sk;
+			spell = sk;
+			break;
 		}
 	}
-	return "";
+	if(spell == $skill[none])
+	{
+		return "abort";
+	}
+	if(my_mp() >= mp_cost(spell))
+	{
+		return "skill " + spell;
+	}
+	foreach i, it in AS_YOG_MP
+	{
+		if(!(as_yogUsed contains it) && item_amount(it) > 0)
+		{
+			as_yogUsed[it] = true;
+			return "item " + it + ", none";
+		}
+	}
+	return "abort";	//no MP and nothing left to restore it: attacking does nothing to her
 }
 
 // everything checked before entering; returns a reason it isn't safe, or ""
@@ -508,6 +535,24 @@ string as_yogProblem()
 			healers += 1;
 		}
 	}
+	boolean spell = have_skill($skill[Saucestorm]) || have_skill($skill[Saucegeyser]) || have_skill($skill[Cannelloni Cannon])
+		|| have_skill($skill[Weapon of the Pastalord]) || have_skill($skill[Stream of Sauce]);
+	if(!spell)
+	{
+		return "no damage spell to kill her with afterwards (she's immune to physical damage)";
+	}
+	int mpItems = 0;
+	foreach i, it in AS_YOG_MP
+	{
+		if(item_amount(it) > 0)
+		{
+			mpItems += 1;
+		}
+	}
+	if(mpItems < 3)
+	{
+		return "only " + mpItems + " kinds of combat MP restorer in inventory (the Suckrament cuts your MP; want 3 or more)";
+	}
 	if(healers < 8 - as_beadsWorn())
 	{
 		return "max HP in the fight would be about " + fightHP + " (a loss of up to " + loss + " a round), and only " + healers
@@ -543,7 +588,9 @@ boolean as_yogUrt()
 	}
 	as_acquire(3, $item[Mer-kin prayerbeads]);
 	//as little max HP as possible (the Suckrament's self-damage is a share of it), a little MP for spells afterwards
-	maximize("sea, -2 hp, -1 muscle, 0.2 mp, +outfit Mer-kin Scholar's Vestments, -familiar", false);
+	//(but nothing that caps or cuts your stats, or adds Monster Level: those stay on for the kill afterwards)
+	maximize("sea, -2 hp, -1 muscle, 0.2 mp, 0.2 mysticality, 0.2 spell damage, -1 ml, +outfit Mer-kin Scholar's Vestments, -familiar, "
+		+ "-equip Drip harness, -equip PARTY HARD T-shirt, -equip red shirt", false);
 	foreach s in $slots[acc1, acc2, acc3]
 	{
 		equip(s, $item[Mer-kin prayerbeads]);
