@@ -818,8 +818,15 @@ boolean as_yogUrt()
 	{
 		run_combat("as_yogFilter");
 	}
+	//after the win the game offers "Finish her off" (choice 713), which gives the Pantaloons of Hatred. KoLmafia only
+	//sees it once the choice page is loaded.
+	if(!handling_choice())
+	{
+		visit_url("choice.php");
+	}
 	if(handling_choice() && last_choice() == 713)
 	{
+		as_info("Finishing Yog-Urt off.");
 		run_choice(1);
 	}
 	set_property("choiceAdventureScript", choiceScript);

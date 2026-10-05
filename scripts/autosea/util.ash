@@ -155,6 +155,9 @@ boolean as_clearPendingEncounter()
 			case 299:	//Down at the Hatch (the Wreck): open it only to free Big Brother
 				answer = get_property("bigBrotherRescued").to_boolean() ? 2 : 1;
 				break;
+			case 713:	//You Brought Her To Her Kn-kn-kn-kn-knees, Knees: finish Yog-Urt off (the Pantaloons of Hatred)
+				answer = 1;
+				break;
 		}
 		if(answer > 0)
 		{
