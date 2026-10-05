@@ -363,6 +363,16 @@ void as_collectCommand(item it, int turns, int qty)
 	{
 		as_info("Learning " + teaches + " from the " + it + ".");
 		use(1, it);
+		cli_execute("refresh skills");
+		if(!have_skill(teaches))
+		{
+			as_warn("Used the " + it + " but " + teaches + " doesn't show as known. Check your skills; the "
+				+ it + (item_amount(it) > 0 ? " is still in your inventory." : " is gone."));
+		}
+		else
+		{
+			as_info("Learned " + teaches + ". Perm it at Valhalla (100 Karma) to keep it.");
+		}
 	}
 }
 

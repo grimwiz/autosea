@@ -325,7 +325,8 @@ boolean as_readDreadscroll()
 		as_info("Using a Mer-kin knucklebone for dreadscroll clue 4.");
 		use(1, bone);
 	}
-	if(!as_clueKnown(3) && have_skill($skill[Deep Dark Visions]) && my_mp() >= mp_cost($skill[Deep Dark Visions]))
+	//Deep Dark Visions only works with at least 500 max HP (the phrase comes even if its damage beats you up)
+	if(!as_clueKnown(3) && have_skill($skill[Deep Dark Visions]) && my_maxhp() >= 500 && my_mp() >= mp_cost($skill[Deep Dark Visions]))
 	{
 		as_info("Casting Deep Dark Visions for dreadscroll clue 3.");
 		as_recover();
