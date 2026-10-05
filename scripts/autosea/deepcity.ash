@@ -488,7 +488,7 @@ string as_yogProblem()
 			return "your gear or effects have " + mod;
 		}
 	}
-	if(as_beadsWorn() < 3)
+	if(as_beadsWorn() < 3 && !(as_beadsWorn() == 2 && have_equipped($item[Mer-kin gutgirdle])))
 	{
 		return "fewer than 3 Mer-kin prayerbeads are worn";
 	}
@@ -498,7 +498,7 @@ string as_yogProblem()
 	}
 	//the Suckrament caps base stats at 30 and makes you lose 80-90% of max HP each round, so max HP in the fight is
 	//about 33 plus what gear and effects add; each round needs a different healer covering that loss
-	int fightHP = 33 + max(0, numeric_modifier("Maximum HP").to_int());
+	int fightHP = max(33, 33 + numeric_modifier("Maximum HP").to_int());	//never below about your capped base Muscle
 	int loss = ceil(0.9 * fightHP);
 	int healers = 0;
 	foreach it, minRestore in AS_YOG_HEALERS
@@ -548,6 +548,14 @@ boolean as_yogUrt()
 	{
 		equip(s, $item[Mer-kin prayerbeads]);
 	}
+	//If the healers can't cover the self-damage at this max HP, trade a prayerbead for a Mer-kin gutgirdle (-300 max
+	//HP, floored at your base Muscle, capped at 30 in the fight): one more Suckrament round, but every healer covers it.
+	item girdle = $item[Mer-kin gutgirdle];
+	if(as_yogProblem().contains_text("healing items") && (item_amount(girdle) > 0 || as_fetch(1, girdle)))
+	{
+		as_info("Swapping a prayerbead for the Mer-kin gutgirdle: max HP drops to its floor, so every healer covers the Suckrament.");
+		equip($slot[acc3], girdle);
+	}
 	restore_mp(min(my_maxmp(), 200));
 	restore_hp(my_maxhp());
 	string problem = as_yogProblem();
@@ -558,8 +566,9 @@ boolean as_yogUrt()
 	}
 	if(mode == "dryrun")
 	{
-		as_info("Yog-Urt dry run: ready. Healers in order: " + count(AS_YOG_HEALERS) + " kinds checked, " + (8 - as_beadsWorn())
-			+ " rounds of Suckrament, then spells. Set autosea_yogUrt = true to fight.");
+		as_info("Yog-Urt dry run: ready. " + (8 - as_beadsWorn()) + " rounds of Suckrament, losing up to "
+			+ ceil(0.9 * max(33, 33 + numeric_modifier("Maximum HP").to_int())) + " HP a round, one different healer each, then spells."
+			+ (have_equipped($item[Mer-kin gutgirdle]) ? " Wearing the Mer-kin gutgirdle." : "") + " Set autosea_yogUrt = true to fight.");
 		return false;
 	}
 	as_ensureFishy();
