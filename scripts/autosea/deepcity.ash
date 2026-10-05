@@ -430,7 +430,8 @@ int as_beadsWorn()
 	return n;
 }
 
-// Max HP while the Suckrament is on: it caps base stats at 30, so it's about 33 plus what gear and effects add.
+// Max HP while the Suckrament is on: it caps base stats at 30, so it's about 33 plus what gear and effects add
+// (never below your capped base Muscle, which is what the Mer-kin gutgirdle's -300 brings it down to).
 int as_yogFightHP()
 {
 	return max(33, 33 + numeric_modifier("Maximum HP").to_int());
@@ -492,27 +493,57 @@ string as_yogFilter(int round, monster enemy, string text)
 	{
 		//heal what's missing with the smallest healer that covers it, keeping the big ones for later; no damage at all
 		item it = as_yogSmallestHealer(my_maxhp() - my_hp(), as_yogUsed);
-		if(it == $item[none])
+		if(it != $item[none])
 		{
-			it = as_yogBiggestHealer(as_yogUsed);
+			as_yogUsed[it] = true;
+			//", none": exactly one item. With Funkslinging, KoLmafia would otherwise add a second copy (each item only
+			//works once this fight) or a damage item such as a seal tooth, which kills you during the Suckrament.
+			return "item " + it + ", none";
 		}
+		//no single healer covers it: with Funkslinging, two of the biggest together
+		it = as_yogBiggestHealer(as_yogUsed);
 		if(it == $item[none])
 		{
 			return "abort";	//nothing safe left to do
 		}
 		as_yogUsed[it] = true;
-		//", none": exactly one item. With Funkslinging, KoLmafia would otherwise add a second copy (each item only
-		//works once this fight) or a damage item such as a seal tooth, which kills you during the Suckrament.
-		return "item " + it + ", none";
+		item second = have_skill($skill[Ambidextrous Funkslinging]) ? as_yogBiggestHealer(as_yogUsed) : $item[none];
+		if(second == $item[none])
+		{
+			return "item " + it + ", none";
+		}
+		as_yogUsed[second] = true;
+		return "item " + it + ", " + second;
 	}
 	//the kill: she hits about every round (Attack 400), so heal before two hits could finish you
 	int hit = max(45, expected_damage(enemy));
+	skill strongest = $skill[none];
+	foreach sk in $skills[Saucegeyser, Weapon of the Pastalord, Saucestorm, Cannelloni Cannon, Stream of Sauce]
+	{
+		if(have_skill(sk))
+		{
+			strongest = sk;
+			break;
+		}
+	}
 	if(my_hp() <= 2 * hit)
 	{
 		item it = as_yogBiggestHealer(as_yogUsed);
 		if(it != $item[none])
 		{
 			as_yogUsed[it] = true;
+			//with Funkslinging, restore MP in the same round if the spell is short of it
+			if(have_skill($skill[Ambidextrous Funkslinging]) && strongest != $skill[none] && my_mp() < mp_cost(strongest))
+			{
+				foreach i, mpItem in AS_YOG_MP
+				{
+					if(!(as_yogUsed contains mpItem) && item_amount(mpItem) > 0)
+					{
+						as_yogUsed[mpItem] = true;
+						return "item " + it + ", " + mpItem;
+					}
+				}
+			}
 			return "item " + it + ", none";
 		}
 	}
@@ -570,9 +601,9 @@ string as_yogProblem()
 			return "your gear or effects have " + mod;
 		}
 	}
-	if(as_beadsWorn() < 3)
+	if(as_beadsWorn() < 3 && !(as_beadsWorn() == 2 && have_equipped($item[Mer-kin gutgirdle])))
 	{
-		return "fewer than 3 Mer-kin prayerbeads are worn";
+		return "fewer than 3 Mer-kin prayerbeads (or 2 with the Mer-kin gutgirdle) are worn";
 	}
 	if(!have_outfit("Mer-kin Scholar's Vestments") || !is_wearing_outfit("Mer-kin Scholar's Vestments"))
 	{
@@ -651,11 +682,28 @@ boolean as_yogUrt()
 	as_acquire(3, $item[Mer-kin prayerbeads]);
 	//fight gear: spell power, and damage reduction against her hits; nothing that caps or cuts your stats or adds
 	//Monster Level. Max HP stays normal: the big healers cover the Suckrament, and HP carries you through the kill.
+	//The Mer-kin gutgirdle (-300 max HP, no stat penalty) is the best answer to the Suckrament: with base stats capped
+	//at 30, it drops max HP to its floor (about 30), so each round costs ~27 and any healer covers it. Once the
+	//Suckrament ends your stats come back and so does most of your HP, for the kill. It takes an accessory slot, so
+	//two prayerbeads: six Suckrament rounds instead of five.
+	item girdle = $item[Mer-kin gutgirdle];
+	boolean useGirdle = as_setting("yogGutgirdle", "true").to_boolean() && can_equip(girdle)
+		&& (item_amount(girdle) > 0 || as_fetch(1, girdle));
 	maximize("sea, mysticality, 0.5 spell damage, 3 dr, 0.3 hp, 0.3 mp, -1 ml, +outfit Mer-kin Scholar's Vestments, -familiar, "
-		+ "-equip Drip harness, -equip PARTY HARD T-shirt, -equip red shirt", false);
+		+ "-equip Drip harness, -equip PARTY HARD T-shirt, -equip red shirt" + (useGirdle ? ", +equip Mer-kin gutgirdle" : ""), false);
+	int beads = useGirdle ? 2 : 3;
 	foreach s in $slots[acc1, acc2, acc3]
 	{
-		equip(s, $item[Mer-kin prayerbeads]);
+		if(beads > 0 && equipped_item(s) != girdle)
+		{
+			equip(s, $item[Mer-kin prayerbeads]);
+			beads -= 1;
+		}
+	}
+	if(useGirdle)
+	{
+		as_info("Wearing the Mer-kin gutgirdle and two prayerbeads: the Suckrament will cost about "
+			+ ceil(0.9 * as_yogFightHP()) + " HP a round for " + (8 - as_beadsWorn()) + " rounds.");
 	}
 	//buy the cheapest big healers still needed to cover every Suckrament round (within autosea_maxPrice)
 	int loss = ceil(0.9 * as_yogFightHP());
@@ -667,6 +715,18 @@ boolean as_yogUrt()
 			break;
 		}
 		if(item_amount(it) == 0 && AS_YOG_HEALERS[it] >= loss)
+		{
+			as_acquire(1, it);
+		}
+	}
+	//and a reserve for the kill when what's left after the Suckrament plan falls short
+	foreach i, it in AS_YOG_BUY
+	{
+		if(!as_yogProblem().contains_text("the kill"))
+		{
+			break;
+		}
+		if(item_amount(it) == 0)
 		{
 			as_acquire(1, it);
 		}
