@@ -396,14 +396,16 @@ AS_DAMAGE_EFFECTS[3] = $effect[Psalm of Pointiness];
 AS_DAMAGE_EFFECTS[4] = $effect[Mayeaugh];
 AS_DAMAGE_EFFECTS[5] = $effect[Feeling Nervous];
 
-// healing items in preference order, with the least they restore (99999 = full HP)
-int[item] AS_YOG_HEALERS;
-AS_YOG_HEALERS[$item[Mer-kin healscroll]] = 99999;
-AS_YOG_HEALERS[$item[soggy used band-aid]] = 99999;
-AS_YOG_HEALERS[$item[red pixel potion]] = 100;
-AS_YOG_HEALERS[$item[filthy poultice]] = 80;
-AS_YOG_HEALERS[$item[gauze garter]] = 80;
-AS_YOG_HEALERS[$item[Doc Galaktik's Ailment Ointment]] = 35;
+// Healing items with the least each restores (99999 = full HP). Each item works only once per fight.
+int[item] AS_YOG_HEALERS = {
+	$item[Mer-kin healscroll]: 99999, $item[soggy used band-aid]: 99999, $item[scented massage oil]: 99999,
+	$item[New Age healing crystal]: 500, $item[sew-on bandage]: 300, $item[extra-strength red potion]: 200,
+	$item[plaid bandage]: 120, $item[red pixel potion]: 100, $item[red potion]: 100, $item[filthy poultice]: 80,
+	$item[gauze garter]: 80, $item[Doc Galaktik's Ailment Ointment]: 35, $item[cast]: 15
+};
+
+// cheap, plentiful big healers to buy when the ones you own can't cover the Suckrament, cheapest first
+item[int] AS_YOG_BUY = {$item[New Age healing crystal], $item[scented massage oil], $item[sew-on bandage]};
 
 // combat MP restorers for after the Suckrament (it caps Mysticality at 30, cutting your MP), largest first
 item[int] AS_YOG_MP = {
@@ -428,60 +430,106 @@ int as_beadsWorn()
 	return n;
 }
 
+// Max HP while the Suckrament is on: it caps base stats at 30, so it's about 33 plus what gear and effects add.
+int as_yogFightHP()
+{
+	return max(33, 33 + numeric_modifier("Maximum HP").to_int());
+}
+
+// the unused healer that restores at least `need`, as small as possible (keeping the big ones), or $item[none]
+item as_yogSmallestHealer(int need, boolean[item] used)
+{
+	item best = $item[none];
+	int bestRestore = 9999999;
+	foreach it, minRestore in AS_YOG_HEALERS
+	{
+		if(!(used contains it) && item_amount(it) > 0 && minRestore >= need && minRestore < bestRestore)
+		{
+			best = it;
+			bestRestore = minRestore;
+		}
+	}
+	return best;
+}
+
+// the unused healer that restores the most, or $item[none]
+item as_yogBiggestHealer(boolean[item] used)
+{
+	item best = $item[none];
+	int bestRestore = -1;
+	foreach it, minRestore in AS_YOG_HEALERS
+	{
+		if(!(used contains it) && item_amount(it) > 0 && minRestore > bestRestore)
+		{
+			best = it;
+			bestRestore = minRestore;
+		}
+	}
+	return best;
+}
+
+// how many Suckrament rounds the healers you hold can cover, a different one each round; `plan` gets the ones used
+int as_yogPlan(boolean[item] plan)
+{
+	int loss = ceil(0.9 * as_yogFightHP());
+	int covered = 0;
+	for r from 1 to 8 - as_beadsWorn()
+	{
+		item it = as_yogSmallestHealer(loss, plan);
+		if(it == $item[none])
+		{
+			break;
+		}
+		plan[it] = true;
+		covered += 1;
+	}
+	return covered;
+}
+
 string as_yogFilter(int round, monster enemy, string text)
 {
-	int suckrament = 8 - as_beadsWorn();
-	if(round <= suckrament)
+	if(have_effect($effect[More Like a Suckrament]) > 0)
 	{
-		//heal with an unused item that covers the damage; never anything that deals damage
-		int need = my_maxhp() - my_hp();
-		item best = $item[none];
-		foreach it, minRestore in AS_YOG_HEALERS
+		//heal what's missing with the smallest healer that covers it, keeping the big ones for later; no damage at all
+		item it = as_yogSmallestHealer(my_maxhp() - my_hp(), as_yogUsed);
+		if(it == $item[none])
 		{
-			if(!(as_yogUsed contains it) && item_amount(it) > 0 && minRestore >= need)
-			{
-				best = it;
-				break;
-			}
+			it = as_yogBiggestHealer(as_yogUsed);
 		}
-		if(best == $item[none])
-		{
-			foreach it, minRestore in AS_YOG_HEALERS
-			{
-				if(!(as_yogUsed contains it) && item_amount(it) > 0)
-				{
-					best = it;
-					break;
-				}
-			}
-		}
-		if(best == $item[none])
+		if(it == $item[none])
 		{
 			return "abort";	//nothing safe left to do
 		}
-		as_yogUsed[best] = true;
+		as_yogUsed[it] = true;
 		//", none": exactly one item. With Funkslinging, KoLmafia would otherwise add a second copy (each item only
 		//works once this fight) or a damage item such as a seal tooth, which kills you during the Suckrament.
-		return "item " + best + ", none";
+		return "item " + it + ", none";
 	}
-	//Yog-Urt is immune to physical damage and soft-caps damage at 100 a hit, so the cheapest spell that reaches ~100
-	//kills about as fast as the dearest one: Saucestorm (6 MP) first
-	skill spell = $skill[none];
-	foreach sk in $skills[Saucestorm, Saucegeyser, Cannelloni Cannon, Weapon of the Pastalord, Stream of Sauce]
+	//the kill: she hits about every round (Attack 400), so heal before two hits could finish you
+	int hit = max(45, expected_damage(enemy));
+	if(my_hp() <= 2 * hit)
+	{
+		item it = as_yogBiggestHealer(as_yogUsed);
+		if(it != $item[none])
+		{
+			as_yogUsed[it] = true;
+			return "item " + it + ", none";
+		}
+	}
+	//she's immune to physical damage and soft-caps a hit at about 100: the strongest spell kills fastest, and every
+	//round costs HP, so cast it while MP lasts, restoring MP before falling back to cheaper spells
+	skill best = $skill[none];
+	foreach sk in $skills[Saucegeyser, Weapon of the Pastalord, Saucestorm, Cannelloni Cannon, Stream of Sauce]
 	{
 		if(have_skill(sk))
 		{
-			spell = sk;
+			best = sk;
 			break;
 		}
 	}
-	if(spell == $skill[none])
+	if(best != $skill[none] && my_mp() >= mp_cost(best))
 	{
-		return "abort";
-	}
-	if(my_mp() >= mp_cost(spell))
-	{
-		return "skill " + spell;
+		return "skill " + best;
 	}
 	foreach i, it in AS_YOG_MP
 	{
@@ -489,6 +537,13 @@ string as_yogFilter(int round, monster enemy, string text)
 		{
 			as_yogUsed[it] = true;
 			return "item " + it + ", none";
+		}
+	}
+	foreach sk in $skills[Saucestorm, Cannelloni Cannon, Stream of Sauce]
+	{
+		if(have_skill(sk) && my_mp() >= mp_cost(sk))
+		{
+			return "skill " + sk;
 		}
 	}
 	return "abort";	//no MP and nothing left to restore it: attacking does nothing to her
@@ -515,25 +570,13 @@ string as_yogProblem()
 			return "your gear or effects have " + mod;
 		}
 	}
-	if(as_beadsWorn() < 3 && !(as_beadsWorn() == 2 && have_equipped($item[Mer-kin gutgirdle])))
+	if(as_beadsWorn() < 3)
 	{
 		return "fewer than 3 Mer-kin prayerbeads are worn";
 	}
 	if(!have_outfit("Mer-kin Scholar's Vestments") || !is_wearing_outfit("Mer-kin Scholar's Vestments"))
 	{
 		return "the Mer-kin Scholar's Vestments aren't worn";
-	}
-	//the Suckrament caps base stats at 30 and makes you lose 80-90% of max HP each round, so max HP in the fight is
-	//about 33 plus what gear and effects add; each round needs a different healer covering that loss
-	int fightHP = max(33, 33 + numeric_modifier("Maximum HP").to_int());	//never below about your capped base Muscle
-	int loss = ceil(0.9 * fightHP);
-	int healers = 0;
-	foreach it, minRestore in AS_YOG_HEALERS
-	{
-		if(item_amount(it) > 0 && minRestore >= loss)
-		{
-			healers += 1;
-		}
 	}
 	boolean spell = have_skill($skill[Saucestorm]) || have_skill($skill[Saucegeyser]) || have_skill($skill[Cannelloni Cannon])
 		|| have_skill($skill[Weapon of the Pastalord]) || have_skill($skill[Stream of Sauce]);
@@ -553,10 +596,29 @@ string as_yogProblem()
 	{
 		return "only " + mpItems + " kinds of combat MP restorer in inventory (the Suckrament cuts your MP; want 3 or more)";
 	}
-	if(healers < 8 - as_beadsWorn())
+	//each Suckrament round costs 80-90% of max HP, and needs a different healer that covers it
+	boolean[item] plan;
+	int rounds = 8 - as_beadsWorn();
+	int covered = as_yogPlan(plan);
+	if(covered < rounds)
 	{
-		return "max HP in the fight would be about " + fightHP + " (a loss of up to " + loss + " a round), and only " + healers
-			+ " different healing items restore that much (need " + (8 - as_beadsWorn()) + "). Take off +HP gear, or get more healers";
+		return "max HP in the Suckrament would be about " + as_yogFightHP() + " (a loss of up to " + ceil(0.9 * as_yogFightHP())
+			+ " a round), and only " + covered + " of its " + rounds + " rounds have a different healer that restores that much";
+	}
+	//the kill takes about 7 rounds of her hits: enough HP for that, or spare healers to top up
+	int hit = max(45, expected_damage($monster[Yog-Urt, Elder Goddess of Hatred]));
+	int spare = 0;
+	foreach it in AS_YOG_HEALERS
+	{
+		if(!(plan contains it) && item_amount(it) > 0)
+		{
+			spare += 1;
+		}
+	}
+	if(my_maxhp() + spare * 80 < 7 * hit)
+	{
+		return "the kill would take about 7 of her hits (" + hit + " each) and you'd have " + my_maxhp() + " HP plus " + spare
+			+ " spare healers; get more healers";
 	}
 	return "";
 }
@@ -587,21 +649,27 @@ boolean as_yogUrt()
 		take_shop(1, $item[soggy used band-aid]);
 	}
 	as_acquire(3, $item[Mer-kin prayerbeads]);
-	//as little max HP as possible (the Suckrament's self-damage is a share of it), a little MP for spells afterwards
-	//(but nothing that caps or cuts your stats, or adds Monster Level: those stay on for the kill afterwards)
-	maximize("sea, -2 hp, -1 muscle, 0.2 mp, 0.2 mysticality, 0.2 spell damage, -1 ml, +outfit Mer-kin Scholar's Vestments, -familiar, "
+	//fight gear: spell power, and damage reduction against her hits; nothing that caps or cuts your stats or adds
+	//Monster Level. Max HP stays normal: the big healers cover the Suckrament, and HP carries you through the kill.
+	maximize("sea, mysticality, 0.5 spell damage, 3 dr, 0.3 hp, 0.3 mp, -1 ml, +outfit Mer-kin Scholar's Vestments, -familiar, "
 		+ "-equip Drip harness, -equip PARTY HARD T-shirt, -equip red shirt", false);
 	foreach s in $slots[acc1, acc2, acc3]
 	{
 		equip(s, $item[Mer-kin prayerbeads]);
 	}
-	//If the healers can't cover the self-damage at this max HP, trade a prayerbead for a Mer-kin gutgirdle (-300 max
-	//HP, floored at your base Muscle, capped at 30 in the fight): one more Suckrament round, but every healer covers it.
-	item girdle = $item[Mer-kin gutgirdle];
-	if(as_yogProblem().contains_text("healing items") && (item_amount(girdle) > 0 || as_fetch(1, girdle)))
+	//buy the cheapest big healers still needed to cover every Suckrament round (within autosea_maxPrice)
+	int loss = ceil(0.9 * as_yogFightHP());
+	foreach i, it in AS_YOG_BUY
 	{
-		as_info("Swapping a prayerbead for the Mer-kin gutgirdle: max HP drops to its floor, so every healer covers the Suckrament.");
-		equip($slot[acc3], girdle);
+		boolean[item] plan;
+		if(as_yogPlan(plan) >= 8 - as_beadsWorn())
+		{
+			break;
+		}
+		if(item_amount(it) == 0 && AS_YOG_HEALERS[it] >= loss)
+		{
+			as_acquire(1, it);
+		}
 	}
 	restore_mp(min(my_maxmp(), 200));
 	restore_hp(my_maxhp());
@@ -613,9 +681,16 @@ boolean as_yogUrt()
 	}
 	if(mode == "dryrun")
 	{
-		as_info("Yog-Urt dry run: ready. " + (8 - as_beadsWorn()) + " rounds of Suckrament, losing up to "
-			+ ceil(0.9 * max(33, 33 + numeric_modifier("Maximum HP").to_int())) + " HP a round, one different healer each, then spells."
-			+ (have_equipped($item[Mer-kin gutgirdle]) ? " Wearing the Mer-kin gutgirdle." : "") + " Set autosea_yogUrt = true to fight.");
+		boolean[item] plan;
+		as_yogPlan(plan);
+		string healers = "";
+		foreach it in plan
+		{
+			healers += (healers == "" ? "" : ", ") + it;
+		}
+		as_info("Yog-Urt dry run: ready. " + (8 - as_beadsWorn()) + " Suckrament rounds losing up to " + ceil(0.9 * as_yogFightHP())
+			+ " HP each, covered by " + healers + ". Then spells, with " + my_maxhp() + " HP against her hits of about "
+			+ max(45, expected_damage($monster[Yog-Urt, Elder Goddess of Hatred])) + ". Set autosea_yogUrt = true to fight.");
 		return false;
 	}
 	as_ensureFishy();
