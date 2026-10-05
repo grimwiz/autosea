@@ -423,10 +423,6 @@ int as_beadsWorn()
 
 string as_yogFilter(int round, monster enemy, string text)
 {
-	if(round <= 1)
-	{
-		clear(as_yogUsed);
-	}
 	int suckrament = 8 - as_beadsWorn();
 	if(round <= suckrament)
 	{
@@ -457,7 +453,9 @@ string as_yogFilter(int round, monster enemy, string text)
 			return "abort";	//nothing safe left to do
 		}
 		as_yogUsed[best] = true;
-		return "item " + best;
+		//", none": exactly one item. With Funkslinging, KoLmafia would otherwise add a second copy (each item only
+		//works once this fight) or a damage item such as a seal tooth, which kills you during the Suckrament.
+		return "item " + best + ", none";
 	}
 	foreach sk in $skills[Saucegeyser, Weapon of the Pastalord, Saucestorm, Cannelloni Cannon, Stream of Sauce]
 	{
@@ -498,17 +496,22 @@ string as_yogProblem()
 	{
 		return "the Mer-kin Scholar's Vestments aren't worn";
 	}
+	//the Suckrament caps base stats at 30 and makes you lose 80-90% of max HP each round, so max HP in the fight is
+	//about 33 plus what gear and effects add; each round needs a different healer covering that loss
+	int fightHP = 33 + max(0, numeric_modifier("Maximum HP").to_int());
+	int loss = ceil(0.9 * fightHP);
 	int healers = 0;
-	foreach it in AS_YOG_HEALERS
+	foreach it, minRestore in AS_YOG_HEALERS
 	{
-		if(item_amount(it) > 0)
+		if(item_amount(it) > 0 && minRestore >= loss)
 		{
 			healers += 1;
 		}
 	}
 	if(healers < 8 - as_beadsWorn())
 	{
-		return "only " + healers + " different healing items (need " + (8 - as_beadsWorn()) + ")";
+		return "max HP in the fight would be about " + fightHP + " (a loss of up to " + loss + " a round), and only " + healers
+			+ " different healing items restore that much (need " + (8 - as_beadsWorn()) + "). Take off +HP gear, or get more healers";
 	}
 	return "";
 }
@@ -539,7 +542,8 @@ boolean as_yogUrt()
 		take_shop(1, $item[soggy used band-aid]);
 	}
 	as_acquire(3, $item[Mer-kin prayerbeads]);
-	maximize("sea, mp, +outfit Mer-kin Scholar's Vestments, -familiar", false);
+	//as little max HP as possible (the Suckrament's self-damage is a share of it), a little MP for spells afterwards
+	maximize("sea, -2 hp, -1 muscle, 0.2 mp, +outfit Mer-kin Scholar's Vestments, -familiar", false);
 	foreach s in $slots[acc1, acc2, acc3]
 	{
 		equip(s, $item[Mer-kin prayerbeads]);
@@ -563,6 +567,7 @@ boolean as_yogUrt()
 	//take the Temple choices here, so the fight is always run with as_yogFilter, never handed to a CCS
 	string choiceScript = get_property("choiceAdventureScript");
 	set_property("choiceAdventureScript", "");
+	clear(as_yogUsed);	//each healing item works once per fight
 	visit_url("sea_merkin.php?action=temple");
 	//Temple choices 710 (Enter), 711 (Drink), 712 (IÄ YOG-URT!) lead into the fight; 713 after it
 	for i from 1 to 4
