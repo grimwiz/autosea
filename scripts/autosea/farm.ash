@@ -382,6 +382,21 @@ int as_totalSubstats()
 	return my_basestat($stat[SubMuscle]) + my_basestat($stat[SubMysticality]) + my_basestat($stat[SubMoxie]);
 }
 
+// turns < 0: farm until adventures run out, eating and drinking for more as autosea's diet allows
+boolean as_farmMoreTurns(int turns, int startTurns)
+{
+	if(turns >= 0)
+	{
+		return my_turncount() - startTurns < turns;
+	}
+	if(!as_haveAdventures())
+	{
+		as_dietSpleen();
+		as_dietTopUp();
+	}
+	return as_haveAdventures();
+}
+
 void as_farm(int turns)
 {
 	clear(as_farmExcluded);
@@ -392,13 +407,16 @@ void as_farm(int turns)
 
 	as_farmDiet();
 	as_farmPrep();
+	//eat and drink first, so pearl decisions count the adventures the diet is about to add
+	as_dietSpleen();
+	as_dietTopUp();
 	as_farmTeaParty();
 	as_farmFamiliar();
 	as_farmDailies();
 	location zone = $location[none];
 	int sincePick = 0;
 
-	while(my_turncount() - startTurns < turns)
+	while(as_farmMoreTurns(turns, startTurns))
 	{
 		//re-pick every 10 adventures (as stats rise, deeper zones open up) and as soon as a pearl is found,
 		//but never walk away from a pearl in progress
@@ -407,7 +425,7 @@ void as_farm(int turns)
 		if(zone == $location[none] || pearlDone || (sincePick >= 10 && !pearlInProgress))
 		{
 			clear(as_farmChosen);	//re-choose gear profiles too: you may be stronger now
-			location next = as_pickFarmZone(turns - (my_turncount() - startTurns));
+			location next = as_pickFarmZone(turns < 0 ? my_adventures() : turns - (my_turncount() - startTurns));
 			if(next == $location[none])
 			{
 				as_warn("No sea zone is safe to farm with your current gear and stats.");

@@ -153,7 +153,7 @@ void main(string... args)
 	{
 		if(command == "farm")
 		{
-			int turns = count(words) > 1 ? words[1].to_int() : my_adventures();
+			int turns = count(words) > 1 ? words[1].to_int() : -1;	//no number: until adventures run out
 			as_farm(turns);
 		}
 		else if(command == "collect")
@@ -194,7 +194,7 @@ void main(string... args)
 			if(as_monkeeStep() >= 999 && as_setting("farmAfterQuest", "false").to_boolean() && my_adventures() > as_advReserve())
 			{
 				as_info("The Sea Monkee quest is done; farming pearls, meat and stats (autosea_farmAfterQuest).");
-				as_farm(my_adventures());
+				as_farm(-1);
 			}
 		}
 	}
