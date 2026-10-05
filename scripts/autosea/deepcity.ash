@@ -569,7 +569,9 @@ boolean as_yogUrt()
 	{
 		if(handling_choice() && $ints[710, 711, 712] contains last_choice())
 		{
-			run_choice(1);
+			//false: don't let KoLmafia fight the combat these lead into with your normal combat settings (an attack
+			//during the Suckrament kills you); the fight is run below with as_yogFilter
+			run_choice(1, false);
 		}
 	}
 	if(current_round() > 0)
