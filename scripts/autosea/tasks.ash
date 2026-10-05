@@ -677,7 +677,25 @@ boolean as_dietTopUp()
 		if(as_fetch(drinks, booze) || (mall_price(booze) <= maxPrice && as_acquire(drinks, booze)) || item_amount(booze) > 0)
 		{
 			drinks = min(drinks, item_amount(booze));
-			if(have_skill($skill[The Ode to Booze]) && as_skillFitsLimits($skill[The Ode to Booze]))
+			if(have_skill($skill[The Ode to Booze]) && have_effect($effect[Ode to Booze]) == 0)
+			{
+				//song slots full: shrug the song with the fewest turns left (the buff step recasts it later), so the
+				//drinks get Ode's extra adventures
+				effect shortest = $effect[none];
+				foreach eff in my_effects()
+				{
+					if(eff.song && eff != $effect[Ode to Booze] && (shortest == $effect[none] || have_effect(eff) < have_effect(shortest)))
+					{
+						shortest = eff;
+					}
+				}
+				if(!as_skillFitsLimits($skill[The Ode to Booze]) && shortest != $effect[none])
+				{
+					as_info("Shrugging " + shortest + " to make room for The Ode to Booze.");
+					cli_execute("shrug " + shortest);
+				}
+			}
+			if(have_skill($skill[The Ode to Booze]))
 			{
 				while(have_effect($effect[Ode to Booze]) < drinks * booze.inebriety && my_mp() >= mp_cost($skill[The Ode to Booze]))
 				{
@@ -690,7 +708,8 @@ boolean as_dietTopUp()
 				}
 			}
 			as_info("Drinking " + drinks + " " + booze + (have_effect($effect[Ode to Booze]) > 0 ? " under The Ode to Booze." : "."));
-			drink(drinks, booze);
+			//drinksilent: never stop an unattended run on KoLmafia's "drink without Ode?" question
+			drinksilent(drinks, booze);
 			return true;
 		}
 	}
@@ -704,7 +723,7 @@ boolean as_dietTopUp()
 		{
 			meals = min(meals, item_amount(food));
 			as_info("Eating " + meals + " " + food + ".");
-			eat(meals, food);
+			eatsilent(meals, food);	//no "eat without milk?" question mid-run
 			return true;
 		}
 	}
