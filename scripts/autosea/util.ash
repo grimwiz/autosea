@@ -158,6 +158,9 @@ boolean as_clearPendingEncounter()
 			case 713:	//You Brought Her To Her Kn-kn-kn-kn-knees, Knees: finish Yog-Urt off (the Pantaloons of Hatred)
 				answer = 1;
 				break;
+			case 1589:	//after a Caliginous Abyss fight: "an eye in the darkness" (or "nothing")
+				answer = 1;
+				break;
 		}
 		if(answer > 0)
 		{

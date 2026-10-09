@@ -41,6 +41,10 @@ void main(int choice, string page)
 			run_choice(as_takeSeaItems() && get_property("seaodesFound").to_int() < 3
 				&& as_itemBeatsPearl($item[seaode], 0) ? 1 : 2);
 			return;
+		case 1589:	//after a Caliginous Abyss fight: "an eye in the darkness" or "nothing". Not in KoLmafia's data yet;
+					//the eye is the only option that does anything, on the way to Mom
+			run_choice(1);
+			return;
 		case 311:	//Heavily Invested in Pun Futures: the scale trades lose value at mall prices
 			run_choice(2);
 			return;
