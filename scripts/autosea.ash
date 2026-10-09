@@ -191,10 +191,17 @@ void main(string... args)
 		{
 			as_questLoop();
 			//nothing left to quest for: carry on farming, like autoscend carries on to the next task
-			if(as_monkeeStep() >= 999 && as_setting("farmAfterQuest", "false").to_boolean() && my_adventures() > as_advReserve())
+			if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
 			{
-				as_info("The Sea Monkee quest is done; farming pearls, meat and stats (autosea_farmAfterQuest).");
-				as_farm(-1);
+				if(as_setting("farmAfterQuest", "true").to_boolean())
+				{
+					as_info("The Sea Monkee quest is done; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
+					as_farm(-1);
+				}
+				else
+				{
+					as_info("The Sea Monkee quest is done; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
+				}
 			}
 		}
 	}

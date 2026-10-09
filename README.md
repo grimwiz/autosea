@@ -21,7 +21,7 @@ Update later with `git update`.
 ## Use
 
 ```
-autosea          do the Sea Monkee quest; once Mom is rescued, stop (set autosea_farmAfterQuest = true to carry on farming)
+autosea          do the Sea Monkee quest, then farm pearls and meat with the remaining adventures (set autosea_farmAfterQuest = false to stop instead)
 autosea status   show progress without adventuring
 autosea farm     farm meat and stats in the best safe sea zone (autosea farm 50 for 50 turns)
 ```
