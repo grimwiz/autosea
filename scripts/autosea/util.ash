@@ -133,6 +133,8 @@ void as_takeOverSettings()
 // If a fight or choice was left open (for example in the relay browser), KoL redirects every action to it,
 // so item uses and adventures silently do nothing. Check before starting.
 
+int as_clubIntoOption();
+
 boolean as_clearPendingEncounter()
 {
 	string page = visit_url("main.php");
@@ -158,8 +160,8 @@ boolean as_clearPendingEncounter()
 			case 713:	//You Brought Her To Her Kn-kn-kn-kn-knees, Knees: finish Yog-Urt off (the Pantaloons of Hatred)
 				answer = 1;
 				break;
-			case 1589:	//after a Caliginous Abyss fight: "an eye in the darkness" (or "nothing")
-				answer = 1;
+			case 1589:	//Clubbed 'Em Into...: a roll at one zone monster's drops
+				answer = as_clubIntoOption();
 				break;
 		}
 		if(answer > 0)
@@ -568,6 +570,40 @@ float as_monsterItemValue(monster m, location loc, float itemBonus)
 		value += chance * as_dropValue(d.drop);
 	}
 	return value;
+}
+
+// Choice 1589, "Clubbed 'Em Into...": after Club 'Em Across the Battlefield (legendary seal-clubbing club) you pick a
+// monster from the zone and get a roll at its drops at your current item drop. Pick the one whose drops are worth the
+// most (wanted items count at autosea_wantValue); "nothing" if none is worth anything.
+int as_clubIntoOption()
+{
+	int best = 0;
+	int nothing = 0;
+	float bestValue = 0;
+	foreach option, text in available_choice_options()
+	{
+		string name = text.to_lower_case().replace_string(".", "");
+		foreach article in $strings[a , an , the ]
+		{
+			if(name.starts_with(article))
+			{
+				name = name.substring(length(article));
+			}
+		}
+		monster m = name.to_monster();
+		if(m == $monster[none])
+		{
+			nothing = option;
+			continue;
+		}
+		float value = as_monsterItemValue(m, my_location(), numeric_modifier("Item Drop"));
+		if(value > bestValue)
+		{
+			bestValue = value;
+			best = option;
+		}
+	}
+	return best > 0 ? best : (nothing > 0 ? nothing : 1);
 }
 
 // the same for a fight in the zone, averaged over its monsters
