@@ -835,6 +835,8 @@ void as_applyBoosts(string expr)
 // summons the thief, an easy fight on the surface that gives the item back, but costs an adventure. Only the
 // last stolen item can be recovered, so chase straight away or not at all. Worth it when the item is worth
 // more than the whistle plus the turn it takes (what a turn in the zone earns).
+boolean as_whistlePricing = false;
+
 int as_whistleCost()
 {
 	//owned whistles count at mall value (they could be sold); otherwise the cheaper of the mall and Big Brother
@@ -843,7 +845,22 @@ int as_whistleCost()
 	{
 		return mall > 0 ? mall : 300;
 	}
-	return as_unitCost($item[dolphin whistle]);
+	//pricing a whistle asks whether a dolphin chase is worth it, which asks what a whistle costs: with no whistle
+	//held that looped until the stack overflowed. Inside that question, use the mall price.
+	if(as_whistlePricing)
+	{
+		return mall > 0 ? mall : 999999;
+	}
+	as_whistlePricing = true;
+	try
+	{
+		return as_unitCost($item[dolphin whistle]);
+	}
+	finally
+	{
+		as_whistlePricing = false;
+	}
+	return 0;
 }
 
 boolean as_chaseDolphin(location loc)
