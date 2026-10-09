@@ -583,11 +583,11 @@ int as_clubIntoOption()
 	foreach option, text in available_choice_options()
 	{
 		string name = text.to_lower_case().replace_string(".", "");
-		foreach article in $strings[a , an , the ]
+		foreach article in $strings[a, an, the]	//ASH trims spaces inside $strings[], so add the space here
 		{
-			if(name.starts_with(article))
+			if(name.starts_with(article + " "))
 			{
-				name = name.substring(length(article));
+				name = name.substring(length(article) + 1);
 			}
 		}
 		monster m = name.to_monster();
