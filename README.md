@@ -204,8 +204,8 @@ Dolphins matter more than item drop for rare drops in deep zones. A dolphin stea
 **No turns where nothing can drop.** Each sea zone takes its pressure penalty off your item drop: 100% in the Outpost, 150% in the Library, 200% in the Trench. At a net −100% nothing drops at all. So whenever autosea adventures for a drop (collecting, the Mer-kin lockkey, or a Library scroll it couldn't buy), it first:
 
 1. dresses for item drop (`autosea_dropMaximize`, default `5 item`). The maximizer counts the zone's penalty and the Better Diver gear that offsets it;
-2. if drops still come at under `autosea_dropFloor` (10) percent of their normal rate, casts your own item drop buffs and Donho's Bubbly Ballad (Better Diver 20);
-3. if that still isn't enough, says so once and leaves that zone alone for the rest of the run, so the turns go on something else.
+2. if drops still come at under `autosea_dropFloor` (10) percent of their normal rate, works out what your own item drop buffs and Donho's Bubbly Ballad (Better Diver 20) would add, with the MP and song slots you have. If they would reach the floor, it casts the biggest first and only as many as it takes;
+3. if they wouldn't, it casts nothing, says so once and leaves that zone alone for the rest of the run, so neither MP nor turns are wasted.
 
 `autosea collect 5 Mer-kin knucklebone` collects until you hold that many, counting your closet and Hagnk's.
 

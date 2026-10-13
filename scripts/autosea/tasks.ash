@@ -930,40 +930,106 @@ float as_dropRate(location loc)
 	return max(0.0, 100 + numeric_modifier("Item Drop") + as_zonePenalty(loc));
 }
 
-// your own skills that add item drop here, or take some of the pressure penalty off
-void as_dropBuffs(location loc)
+record as_dropBuff
+{
+	skill sk;
+	string command;
+	float drop;	//item drop it adds
+	float diver;	//Better Diver it adds (comes off the zone's penalty)
+};
+
+// percent of their normal rate that drops would come at, for a given item drop and Better Diver
+float as_dropRateWith(location loc, float drop, float diver)
+{
+	return max(0.0, 100 + drop + min(0.0, numeric_modifier("Loc:" + loc, "Item Drop Penalty") + diver));
+}
+
+// Your own skills that add item drop here, or take some of the pressure penalty off. Works out first whether
+// they can lift drops to `least` percent of normal with the MP and song slots you have: if they can't, nothing
+// is cast, since the MP would be wasted. Otherwise casts the biggest first and only as many as it takes.
+boolean as_dropBuffs(location loc, float least)
 {
 	set_location(loc);
+	as_dropBuff[int] plan;
+	void consider(skill sk, effect eff, string command)
+	{
+		if(sk == $skill[none] || eff == $effect[none] || command == "" || !have_skill(sk) || have_effect(eff) > 0)
+		{
+			return;
+		}
+		if(!as_skillFitsLimits(sk) || !as_boostCommandOk(command))
+		{
+			return;
+		}
+		foreach i, known in plan
+		{
+			if(known.sk == sk)
+			{
+				return;
+			}
+		}
+		as_dropBuff b;
+		b.sk = sk;
+		b.command = command;
+		b.drop = numeric_modifier(eff, "Item Drop");
+		b.diver = max(0.0, numeric_modifier(eff, "Better Diver"));
+		if(b.drop > 0 || b.diver > 0)
+		{
+			plan[count(plan)] = b;
+		}
+	}
 	foreach i, entry in maximize("item", 0, 0, true, false)
 	{
-		skill sk = entry.skill;
-		if(entry.score <= 0 || sk == $skill[none] || !have_skill(sk) || entry.command == "")
+		if(entry.score > 0 && entry.display.index_of("<font color=gray>") == -1)
 		{
-			continue;
+			consider(entry.skill, entry.effect, entry.command);
 		}
-		if(entry.display.index_of("<font color=gray>") != -1 || my_mp() < mp_cost(sk) + 50)
-		{
-			continue;
-		}
-		if(entry.effect != $effect[none] && have_effect(entry.effect) > 0)
-		{
-			continue;
-		}
-		if(!as_skillFitsLimits(sk) || !as_boostCommandOk(entry.command))
-		{
-			continue;
-		}
-		as_debug("drop buff: " + entry.command);
-		as_runBoost(entry.command, sk);
 	}
 	//Better Diver 20: the maximizer may not list it under item drop
-	skill ballad = $skill[Donho's Bubbly Ballad];
-	if(as_zonePenalty(loc) < 0 && have_skill(ballad) && have_effect($effect[Donho's Bubbly Ballad]) == 0
-		&& as_skillFitsLimits(ballad) && my_mp() >= mp_cost(ballad) + 50)
+	consider($skill[Donho's Bubbly Ballad], $effect[Donho's Bubbly Ballad], "cast 1 Donho's Bubbly Ballad");
+	sort plan by -(value.drop + value.diver);
+
+	float drop = numeric_modifier("Item Drop");
+	float diver = max(0.0, numeric_modifier("Better Diver"));
+	int mp = my_mp() - 50;
+	int songsFree = (boolean_modifier("Four Songs") ? 4 : 3) + numeric_modifier("Additional Song").to_int() - as_activeSongs();
+	boolean[int] chosen;
+	foreach i, b in plan
 	{
-		as_debug("drop buff: Donho's Bubbly Ballad");
-		as_runBoost("cast 1 Donho's Bubbly Ballad", ballad);
+		if(as_dropRateWith(loc, drop, diver) >= least)
+		{
+			break;
+		}
+		if(mp_cost(b.sk) > mp || (b.sk.song && songsFree <= 0))
+		{
+			continue;
+		}
+		if(as_dropRateWith(loc, drop + b.drop, diver + b.diver) <= as_dropRateWith(loc, drop, diver))
+		{
+			continue;	//adds nothing here, such as Better Diver beyond the zone's penalty
+		}
+		chosen[i] = true;
+		mp -= mp_cost(b.sk);
+		songsFree -= b.sk.song ? 1 : 0;
+		drop += b.drop;
+		diver += b.diver;
 	}
+	float predicted = as_dropRateWith(loc, drop, diver);
+	if(predicted < least)
+	{
+		as_debug("own buffs would only bring drops in " + loc + " to " + to_int(predicted) + "% of normal (floor "
+			+ to_int(least) + "): not casting any");
+		return false;
+	}
+	foreach i, b in plan
+	{
+		if(chosen contains i)
+		{
+			as_debug("drop buff: " + b.command);
+			as_runBoost(b.command, b.sk);
+		}
+	}
+	return true;
 }
 
 // Call with the drop gear on. False (said once) if drops come too rarely here even with your buffs.
@@ -972,7 +1038,7 @@ boolean as_dropReady(location loc)
 	float least = as_setting("dropFloor", "10").to_float();
 	if(as_dropRate(loc) < least)
 	{
-		as_dropBuffs(loc);
+		as_dropBuffs(loc, least);
 	}
 	if(as_dropRate(loc) >= least)
 	{
@@ -982,9 +1048,10 @@ boolean as_dropReady(location loc)
 	as_dropBlocked[loc] = true;
 	int pressure = to_int(0 - numeric_modifier("Loc:" + loc, "Item Drop Penalty"));
 	as_warn("Not adventuring in " + loc + " for a drop: the pressure there takes " + pressure + "% off item drop, and with +"
-		+ to_int(numeric_modifier("Item Drop")) + "% item drop and " + to_int(numeric_modifier("Better Diver"))
+		+ to_int(numeric_modifier("Item Drop")) + "% item drop and " + to_int(max(0.0, numeric_modifier("Better Diver")))
 		+ " Better Diver, drops come at " + to_int(as_dropRate(loc)) + "% of their normal rate (autosea_dropFloor is "
-		+ to_int(least) + "). More item drop, or Better Diver gear and buffs, would open it up.");
+		+ to_int(least) + "). Your own buffs can't make up the difference, so none were cast. More item drop, or Better"
+		+ " Diver gear and buffs, would open it up.");
 	return false;
 }
 
