@@ -638,7 +638,9 @@ float as_zoneBaseMeat(location loc)
 float as_zonePenalty(location loc)
 {
 	float penalty = numeric_modifier("Loc:" + loc, "Item Drop Penalty");
-	return min(0.0, penalty + numeric_modifier("Better Diver"));
+	//With no Better Diver on at all, KoLmafia reports "Better Diver" as the penalty of the zone you're in (a
+	//negative number), which counted the penalty twice. Real Better Diver is never negative.
+	return min(0.0, penalty + max(0.0, numeric_modifier("Better Diver")));
 }
 
 // what fighting one monster here is worth with the gear you have on now: meat plus drops
