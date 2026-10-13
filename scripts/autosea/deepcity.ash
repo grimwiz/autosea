@@ -190,6 +190,32 @@ string as_libraryFilter(int round, monster enemy, string text)
 	return "";
 }
 
+// The scrolls for clues 2 and 5 are a 10% drop from one Library monster, and a combat script may have used up
+// the ones you held before the dreadscroll turned up. So get the missing one (a few hundred meat in the mall)
+// rather than adventure until one drops. A scroll that can't be got isn't asked for again this run.
+boolean[item] as_scrollUnavailable;
+
+void as_libraryScrolls()
+{
+	if(item_amount($item[Mer-kin dreadscroll]) == 0)
+	{
+		return;
+	}
+	void want(int clue, item scroll)
+	{
+		if(as_clueKnown(clue) || item_amount(scroll) > 0 || (as_scrollUnavailable contains scroll))
+		{
+			return;
+		}
+		if(!as_acquire(1, scroll))
+		{
+			as_scrollUnavailable[scroll] = true;
+		}
+	}
+	want(2, $item[Mer-kin healscroll]);
+	want(5, $item[Mer-kin killscroll]);
+}
+
 boolean as_merkinLibrary()
 {
 	if(!as_deepcityOpen() || as_deepcityPath() != "scholar" || get_property("isMerkinHighPriest").to_boolean())
@@ -210,6 +236,7 @@ boolean as_merkinLibrary()
 		as_warn("The Mer-kin Library needs the Mer-kin Scholar's Vestments.");
 		return false;
 	}
+	as_libraryScrolls();
 	string goal = item_amount($item[Mer-kin dreadscroll]) == 0 ? "the dreadscroll" : "dreadscroll clues";
 	as_info("Mer-kin Library: looking for " + goal + ".");
 	return as_seaAdv($location[Mer-kin Library], "+outfit Mer-kin Scholar's Vestments", "as_libraryFilter");

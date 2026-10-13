@@ -79,7 +79,7 @@ Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is a
 **Stage 2, the Mer-kin Library** (wearing the Scholar's Vestments, once vocabulary is done):
 
 - adventures until the 6th encounter gives the Mer-kin dreadscroll;
-- with the dreadscroll in hand, uses a Mer-kin healscroll in a fight for clue 2, and a Mer-kin killscroll for clue 5;
+- with the dreadscroll in hand, uses a Mer-kin healscroll in a fight for clue 2, and a Mer-kin killscroll for clue 5. If you hold neither, it gets one the cheapest way (a few hundred meat in the mall) instead of adventuring until one drops;
 - answers the Catalog Card (choice 704) by reading an unread book. At 100% vocabulary only the three clue books remain, for clues 1, 6 and 8.
 
 It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 4 need a darkbook skill and a rare knucklebone, so they aren't farmed. `autosea status` lists the known clues.
