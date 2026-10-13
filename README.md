@@ -201,6 +201,12 @@ What it does:
 
 Dolphins matter more than item drop for rare drops in deep zones. A dolphin steals a missed drop at its base rate times the zone's pressure (1.5 times in the Library), whatever your item drop is. So chasing them roughly doubles your chances there.
 
+**No turns where nothing can drop.** Each sea zone takes its pressure penalty off your item drop: 100% in the Outpost, 150% in the Library, 200% in the Trench. At a net −100% nothing drops at all. So whenever autosea adventures for a drop (collecting, the Mer-kin lockkey, or a Library scroll it couldn't buy), it first:
+
+1. dresses for item drop (`autosea_dropMaximize`, default `5 item`). The maximizer counts the zone's penalty and the Better Diver gear that offsets it;
+2. if drops still come at under `autosea_dropFloor` (10) percent of their normal rate, casts your own item drop buffs and Donho's Bubbly Ballad (Better Diver 20);
+3. if that still isn't enough, says so once and leaves that zone alone for the rest of the run, so the turns go on something else.
+
 `autosea collect 5 Mer-kin knucklebone` collects until you hold that many, counting your closet and Hagnk's.
 
 `autosea_wantItems` (comma-separated item names, each optionally with `:how many`, e.g. `Mer-kin knucklebone:5`) keeps items wanted during normal farming and questing too. They count as worth `autosea_wantValue` (1,000,000) until you have one, or know the skill it teaches. That means their dropper gets tracked where it's worth it, and any a dolphin steals get chased.

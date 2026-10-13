@@ -238,8 +238,25 @@ boolean as_merkinLibrary()
 	}
 	as_libraryScrolls();
 	string goal = item_amount($item[Mer-kin dreadscroll]) == 0 ? "the dreadscroll" : "dreadscroll clues";
+	//with the dreadscroll and the Catalog Card clues done, all that's left is a scroll: if it couldn't be bought,
+	//the Library is only worth the turns while a scroll can actually drop there
+	boolean scrollOnly = item_amount($item[Mer-kin dreadscroll]) > 0 && as_clueKnown(1) && as_clueKnown(6) && as_clueKnown(8)
+		&& (as_clueKnown(2) || item_amount($item[Mer-kin healscroll]) == 0)
+		&& (as_clueKnown(5) || item_amount($item[Mer-kin killscroll]) == 0);
+	if(scrollOnly)
+	{
+		goal = "a Mer-kin " + (as_clueKnown(5) ? "healscroll" : "killscroll") + " to drop";
+	}
 	as_info("Mer-kin Library: looking for " + goal + ".");
-	return as_seaAdv($location[Mer-kin Library], "+outfit Mer-kin Scholar's Vestments", "as_libraryFilter");
+	as_dropWanted = scrollOnly;
+	try
+	{
+		return as_seaAdv($location[Mer-kin Library], "+outfit Mer-kin Scholar's Vestments", "as_libraryFilter");
+	}
+	finally
+	{
+		as_dropWanted = false;
+	}
 }
 
 // ---------------------------------------------------------------- stage 3a: reading the dreadscroll

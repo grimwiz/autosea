@@ -913,14 +913,110 @@ void as_afterSeaAdv()
 	}
 }
 
+// ---------------------------------------------------------------- adventuring for a drop
+// Each sea zone takes its pressure penalty off your item drop (-150% in the Library), and at a net -100% nothing
+// drops at all: on 13 Oct 2026 the Library gave no item in 170 fights. So an adventure that is there for a drop
+// dresses for item drop first (the maximizer counts the zone's penalty and Better Diver gear once it knows the
+// zone). If drops still come at under autosea_dropFloor percent of their normal rate, it casts your own item
+// drop and Better Diver buffs. If that isn't enough either, it leaves the zone alone for this run, so the turns
+// go on something else.
+boolean as_dropWanted = false;	//set by a task while it adventures for a drop
+boolean[location] as_dropBlocked;	//zones where drops come too rarely with all you have, this run
+int[location] as_dropCheckedAt;	//turn count when the zone last passed the check
+
+// percent of their normal rate that drops come at in loc, with what you have on now
+float as_dropRate(location loc)
+{
+	return max(0.0, 100 + numeric_modifier("Item Drop") + as_zonePenalty(loc));
+}
+
+// your own skills that add item drop here, or take some of the pressure penalty off
+void as_dropBuffs(location loc)
+{
+	set_location(loc);
+	foreach i, entry in maximize("item", 0, 0, true, false)
+	{
+		skill sk = entry.skill;
+		if(entry.score <= 0 || sk == $skill[none] || !have_skill(sk) || entry.command == "")
+		{
+			continue;
+		}
+		if(entry.display.index_of("<font color=gray>") != -1 || my_mp() < mp_cost(sk) + 50)
+		{
+			continue;
+		}
+		if(entry.effect != $effect[none] && have_effect(entry.effect) > 0)
+		{
+			continue;
+		}
+		if(!as_skillFitsLimits(sk) || !as_boostCommandOk(entry.command))
+		{
+			continue;
+		}
+		as_debug("drop buff: " + entry.command);
+		as_runBoost(entry.command, sk);
+	}
+	//Better Diver 20: the maximizer may not list it under item drop
+	skill ballad = $skill[Donho's Bubbly Ballad];
+	if(as_zonePenalty(loc) < 0 && have_skill(ballad) && have_effect($effect[Donho's Bubbly Ballad]) == 0
+		&& as_skillFitsLimits(ballad) && my_mp() >= mp_cost(ballad) + 50)
+	{
+		as_debug("drop buff: Donho's Bubbly Ballad");
+		as_runBoost("cast 1 Donho's Bubbly Ballad", ballad);
+	}
+}
+
+// Call with the drop gear on. False (said once) if drops come too rarely here even with your buffs.
+boolean as_dropReady(location loc)
+{
+	float least = as_setting("dropFloor", "10").to_float();
+	if(as_dropRate(loc) < least)
+	{
+		as_dropBuffs(loc);
+	}
+	if(as_dropRate(loc) >= least)
+	{
+		as_dropCheckedAt[loc] = my_turncount();
+		return true;
+	}
+	as_dropBlocked[loc] = true;
+	int pressure = to_int(0 - numeric_modifier("Loc:" + loc, "Item Drop Penalty"));
+	as_warn("Not adventuring in " + loc + " for a drop: the pressure there takes " + pressure + "% off item drop, and with +"
+		+ to_int(numeric_modifier("Item Drop")) + "% item drop and " + to_int(numeric_modifier("Better Diver"))
+		+ " Better Diver, drops come at " + to_int(as_dropRate(loc)) + "% of their normal rate (autosea_dropFloor is "
+		+ to_int(least) + "). More item drop, or Better Diver gear and buffs, would open it up.");
+	return false;
+}
+
 boolean as_seaAdvOnce(location loc, string extraMaximize, string filter)
 {
+	boolean forDrop = as_dropWanted || as_collecting;
+	if(forDrop && (as_dropBlocked contains loc))
+	{
+		return false;
+	}
 	as_dietSpleen();
 	as_dietTopUp();
 	as_ensureFishy(loc);
 	if(extraMaximize.contains_text("combat"))
 	{
 		as_applyBoosts("-combat");
+	}
+	if(forDrop)
+	{
+		if(!extraMaximize.contains_text("item"))
+		{
+			extraMaximize += (extraMaximize == "" ? "" : ", ") + as_setting("dropMaximize", "5 item");
+		}
+		//checked on arriving and every 10 turns after, as buffs run out
+		if(!(as_dropCheckedAt contains loc) || my_turncount() - as_dropCheckedAt[loc] >= 10)
+		{
+			set_location(loc);
+			if(as_equipForSea(extraMaximize) && !as_dropReady(loc))
+			{
+				return false;
+			}
+		}
 	}
 	//pearl zones: push the zone's element resistance towards 18 before fighting
 	if(as_pearlAvailable(loc))
@@ -1545,7 +1641,15 @@ boolean as_seahorse()
 		return as_seaAdv($location[The Mer-Kin Outpost], NC_HUNT + (as_seahorseGear() == "" ? "" : ", " + as_seahorseGear()), "as_seahorseFilter");
 	}
 	as_info("Fighting in the Mer-Kin Outpost for a Mer-kin lockkey (lasso practice " + get_property("lassoTrainingCount") + "/20).");
-	return as_seaAdv($location[The Mer-Kin Outpost], as_seahorseGear(), "as_seahorseFilter");
+	as_dropWanted = true;	//the lockkey is a drop
+	try
+	{
+		return as_seaAdv($location[The Mer-Kin Outpost], as_seahorseGear(), "as_seahorseFilter");
+	}
+	finally
+	{
+		as_dropWanted = false;
+	}
 }
 
 // this class's Temple reward on the Scholar route (Yog-Urt)
