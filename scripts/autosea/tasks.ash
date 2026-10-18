@@ -871,8 +871,10 @@ boolean as_chaseDolphin(location loc)
 		return false;
 	}
 	int value = as_dropValue(stolen);
-	//the whistle fight takes a turn: worth what a turn here earns, or more while collecting something wanted
-	int cost = as_whistleCost() + max(as_zoneWorth(loc), as_turnValueFloor);
+	//the whistle fight takes a turn, worth what the best farming turn earns (or this zone, if more, or more while
+	//collecting something wanted): a quest zone's own low value let run 101's Octopus's Garden (about 180 a turn)
+	//whistle back seven 850-1,000 Meat items in one evening, a turn each
+	int cost = as_whistleCost() + max(as_zoneWorth(loc), as_bestTurnValue());
 	if(value <= cost)
 	{
 		as_debug("A dolphin has your " + stolen + " (" + value + " meat): not worth a whistle and a turn (" + cost + ").");
