@@ -65,7 +65,9 @@ int as_maxPrice()
 	return as_setting("maxPrice", "25000").to_int();
 }
 
-// get qty of it into inventory without buying: from the closet, then from Hagnk's (when allowed)
+// get qty of it into inventory without buying: from the closet, then from Hagnk's and your own mall store (when
+// allowed). Stock in your store is already yours: taking it back beats buying someone else's (a sea lasso is
+// about 3,900 in the mall, and your store held 67).
 boolean as_fetch(int qty, item it)
 {
 	if(item_amount(it) < qty && closet_amount(it) > 0)
@@ -75,6 +77,11 @@ boolean as_fetch(int qty, item it)
 	if(item_amount(it) < qty && storage_amount(it) > 0 && can_interact())
 	{
 		take_storage(min(qty - item_amount(it), storage_amount(it)), it);
+	}
+	if(item_amount(it) < qty && can_interact() && as_setting("useShop", "true").to_boolean() && shop_amount(it) > 0)
+	{
+		as_info("Taking " + min(qty - item_amount(it), shop_amount(it)) + " " + it + " back from your store.");
+		take_shop(min(qty - item_amount(it), shop_amount(it)), it);
 	}
 	return item_amount(it) >= qty;
 }

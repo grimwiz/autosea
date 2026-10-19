@@ -186,6 +186,7 @@ When collecting is cheaper, autosea goes and gets the item, tracking the monster
 | --- | --- | --- |
 | `autosea_collect` | `true` | Collect items in-game when that's cheaper than the mall |
 | `autosea_selfSufficiency` | 1 | Above 1 favours in-game sources (1.5: collect even at up to 1.5 times the mall price) |
+| `autosea_useShop` | true | Take items back from your own mall store before buying or collecting them |
 | `autosea_collectMaxTurns` | 60 | Most turns spent collecting one batch |
 
 ### Collecting things you want for themselves
