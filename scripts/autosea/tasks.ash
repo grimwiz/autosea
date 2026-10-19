@@ -1590,13 +1590,21 @@ boolean as_lassoExpert()
 }
 
 int as_cowbellsThisFight = 0;
+boolean as_lassoThrownThisFight = false;
+string as_seahorseFight = "";
 
-// combat filter for the seahorse chain: tame the seahorse, otherwise practise with a lasso once per fight
+// combat filter for the seahorse chain: tame the seahorse, otherwise practise with a lasso once per fight.
+// Each item is used singly (", none"): with Ambidextrous Funkslinging KoLmafia otherwise throws two of an item you
+// hold two of, and only one lasso throw a fight counts. The filter's round number also isn't a reliable "first
+// action" test (run 101's practice threw a pair in round 1 and another pair in round 2), so a new fight is spotted
+// by _lastCombatStarted instead.
 string as_seahorseFilter(int round, monster enemy, string text)
 {
-	if(round <= 1)
+	if(get_property("_lastCombatStarted") != as_seahorseFight)
 	{
+		as_seahorseFight = get_property("_lastCombatStarted");
 		as_cowbellsThisFight = 0;
+		as_lassoThrownThisFight = false;
 	}
 	if(enemy == $monster[wild seahorse])
 	{
@@ -1607,13 +1615,14 @@ string as_seahorseFilter(int round, monster enemy, string text)
 		if(as_cowbellsThisFight < 3 && item_amount($item[sea cowbell]) > 0)
 		{
 			as_cowbellsThisFight += 1;
-			return "item sea cowbell";
+			return "item sea cowbell, none";
 		}
-		return "item sea lasso";
+		return "item sea lasso, none";
 	}
-	if(round <= 1 && !as_lassoExpert() && item_amount($item[sea lasso]) > 0)
+	if(!as_lassoThrownThisFight && !as_lassoExpert() && item_amount($item[sea lasso]) > 0)
 	{
-		return "item sea lasso";
+		as_lassoThrownThisFight = true;
+		return "item sea lasso, none";
 	}
 	return "";
 }
@@ -1674,6 +1683,12 @@ boolean as_seahorse()
 	{
 		if(!as_lassoExpert())
 		{
+			//each practice fight uses up a lasso: without one the fight trains nothing (run 101 fought 196 such turns)
+			if(!as_acquire(1, $item[sea lasso]))
+			{
+				as_warn("No sea lasso to practise with, so the seahorse waits.");
+				return false;
+			}
 			as_info("Practising with the sea lasso (" + get_property("lassoTrainingCount") + "/20) in the Briny Deeps.");
 			return as_seaAdv($location[The Briny Deeps], as_seahorseGear(), "as_seahorseFilter");
 		}
