@@ -102,12 +102,12 @@ boolean as_merkinVocab()
 		{
 			return false;
 		}
-		if(!as_acquire(1, $item[Mer-kin cheatsheet]))
+		if(!as_need(1, $item[Mer-kin cheatsheet], "Mer-kin vocabulary"))
 		{
 			return false;
 		}
 	}
-	if(!as_acquire(1, $item[Mer-kin wordquiz]))
+	if(!as_need(1, $item[Mer-kin wordquiz], "Mer-kin vocabulary"))
 	{
 		return false;
 	}
@@ -145,7 +145,8 @@ boolean as_workteaClue()
 		return false;
 	}
 	as_workteaTried = true;
-	if(!as_acquire(1, $item[Mer-kin worktea]) || !as_acquire(1, $item[beefy fish meat]) || !as_acquire(1, $item[white rice]))
+	if(!as_need(1, $item[Mer-kin worktea], "the worktea clue") || !as_need(1, $item[beefy fish meat], "the worktea clue")
+		|| !as_need(1, $item[white rice], "the worktea clue"))
 	{
 		return false;
 	}

@@ -65,10 +65,6 @@ int as_maxPrice()
 	return as_setting("maxPrice", "25000").to_int();
 }
 
-// turns a task may spend without quest progress before autosea stops (autosea_stuckTurns), for a task that
-// waits on something rare; reset before each task
-int as_taskStuckTurns = 0;
-
 // get qty of it into inventory without buying: from the closet, then from Hagnk's and your own mall store (when
 // allowed). Stock in your store is already yours: taking it back beats buying someone else's (a sea lasso is
 // about 3,900 in the mall, and your store held 67).
@@ -387,18 +383,120 @@ void as_collectCommand(item it, int turns, int qty)
 	}
 }
 
-// make sure we hold qty of it: closet and storage first, then the cheapest of the mall and the in-game ways.
-// Returns true if we hold enough.
+// what it's made from, when you can make it (the tools and skills KoLmafia needs); empty otherwise. Sushi is left
+// out: rolling it eats it.
+int[item] as_makeParts(item it)
+{
+	int[item] none;
+	if(craft_type(it).to_lower_case().contains_text("sushi"))
+	{
+		return none;
+	}
+	return get_ingredients(it);
+}
+
+int as_makeDepth = 0;	//making an item can need parts that are made in turn; stop well short of a loop
+
+// make need more of it, getting the parts by any of as_acquire's ways
+boolean as_acquire(int qty, item it);
+
+boolean as_make(int qty, item it)
+{
+	int need = qty - item_amount(it);
+	int[item] parts = as_makeParts(it);
+	if(need <= 0 || count(parts) == 0 || as_makeDepth >= 3)
+	{
+		return item_amount(it) >= qty;
+	}
+	as_makeDepth += 1;
+	boolean gotParts = true;
+	try
+	{
+		foreach part, n in parts
+		{
+			if(!as_acquire(n * need, part))
+			{
+				gotParts = false;
+				break;
+			}
+		}
+	}
+	finally
+	{
+		as_makeDepth -= 1;
+	}
+	if(gotParts)
+	{
+		as_info("Making " + need + " " + it + ".");
+		create(need, it);
+	}
+	return item_amount(it) >= qty;
+}
+
+// what making need of it costs: parts you hold at what they'd sell for, missing parts at their cheapest
+int as_makeCost(int need, item it)
+{
+	int[item] parts = as_makeParts(it);
+	if(count(parts) == 0)
+	{
+		return 999999999;
+	}
+	float cost = 0;
+	foreach part, n in parts
+	{
+		int held = min(n * need, item_amount(part));
+		cost += held * as_dropValue(part) + (n * need - held) * as_unitCost(part);
+	}
+	return min(999999999.0, cost).to_int();
+}
+
+// when buying isn't possible (buying off, no mall price, over autosea_maxPrice, or the buy failed): any in-game way,
+// whatever it costs in turns. A quest step that needs it can't go on without it.
+boolean as_acquireAnyway(int qty, item it)
+{
+	if(is_coinmaster_item(it) && sell_price($coinmaster[Big Brother], it) > 0)
+	{
+		while(item_amount(it) < qty && as_buyFromBigBrother(it, sell_price($coinmaster[Big Brother], it)))
+		{
+		}
+		if(item_amount(it) >= qty)
+		{
+			return true;
+		}
+	}
+	if(as_make(qty, it))
+	{
+		return true;
+	}
+	if(!as_collecting && as_setting("collect", "true").to_boolean())
+	{
+		as_source src = as_dropSource(it);
+		if(src.how == "collect")
+		{
+			as_info("Can't buy " + it + ", so collecting it in " + src.loc + " instead (about " + ceil(src.turns) + " turns each).");
+			return as_collect(qty, it, src);
+		}
+	}
+	return false;
+}
+
+// make sure we hold qty of it: closet, storage and your store first, then the cheapest of making it, the mall and
+// the in-game ways; if it can't be bought, any in-game way at all. Returns true if we hold enough.
 boolean as_acquire(int qty, item it)
 {
 	if(as_fetch(qty, it))
 	{
 		return true;
 	}
+	int mall = mall_price(it) > 0 ? mall_price(it) : 999999999;
+	as_source src = as_ingameSource(it);
+	int need = qty - item_amount(it);
+	if(as_makeDepth < 3 && as_makeCost(need, it) < min(mall, src.cost).to_float() * need && as_make(qty, it))
+	{
+		return true;
+	}
 	if(!as_collecting && as_setting("collect", "true").to_boolean())
 	{
-		as_source src = as_ingameSource(it);
-		int mall = mall_price(it) > 0 ? mall_price(it) : 999999999;
 		if(src.how == "collect" && src.cost < mall * as_setting("selfSufficiency", "1").to_float()
 			&& as_collect(qty, it, src))
 		{
@@ -422,7 +520,7 @@ boolean as_acquire(int qty, item it)
 	if(!as_buyingAllowed())
 	{
 		as_warn("Need " + it + " but buying is off" + (can_interact() ? " (autosea_buy)." : " (no mall access yet)."));
-		return false;
+		return as_acquireAnyway(qty, it);
 	}
 	int missing = qty - item_amount(it);
 	int price = mall_price(it);
@@ -433,21 +531,36 @@ boolean as_acquire(int qty, item it)
 	if(price <= 0)
 	{
 		as_warn("Need " + it + " but KoLmafia found no mall price for it.");
-		return false;
+		return as_acquireAnyway(qty, it);
 	}
 	if(price > as_maxPrice())
 	{
 		as_warn("Need " + it + " but it costs about " + price + ", over autosea_maxPrice (" + as_maxPrice() + ").");
-		return false;
+		return as_acquireAnyway(qty, it);
 	}
 	as_info("Buying " + missing + " " + it + " (about " + price + " each).");
 	int bought = buy(missing, it, as_maxPrice());
 	if(item_amount(it) < qty)
 	{
 		as_warn("Couldn't buy " + it + " (bought " + bought + "). Check the CLI for KoLmafia's reason.");
-		return false;
+		return as_acquireAnyway(qty, it);
 	}
 	return true;
+}
+
+// a quest step's prerequisite: get it by any means, or stop autosea and say what's missing. Carrying on without it
+// spends turns that can't succeed (lasso practice once spent 196 turns with no lasso to throw).
+string as_stopReason;
+
+boolean as_need(int qty, item it, string why)
+{
+	if(as_acquire(qty, it))
+	{
+		return true;
+	}
+	as_stopReason = "Can't get " + qty + " " + it + " (have " + item_amount(it) + ") for " + why + ": stopping. The messages above say why.";
+	as_warn(as_stopReason);
+	return false;
 }
 
 boolean as_buyFromBigBrother(item it, int cost)
@@ -1695,21 +1808,18 @@ boolean as_seahorse()
 		if(!as_lassoExpert())
 		{
 			//each practice fight uses up a lasso: without one the fight trains nothing (run 101 fought 196 such turns)
-			if(!as_acquire(1, $item[sea lasso]))
+			if(!as_need(1, $item[sea lasso], "lasso practice"))
 			{
-				as_warn("No sea lasso to practise with, so the seahorse waits.");
 				return false;
 			}
 			as_info("Practising with the sea lasso (" + get_property("lassoTrainingCount") + "/20) in the Briny Deeps.");
 			return as_seaAdv($location[The Briny Deeps], as_seahorseGear(), "as_seahorseFilter");
 		}
-		if(!as_acquire(3, $item[sea cowbell]) || !as_acquire(1, $item[sea lasso]))
+		if(!as_need(3, $item[sea cowbell], "taming the seahorse") || !as_need(1, $item[sea lasso], "taming the seahorse"))
 		{
-			as_warn("Need 3 sea cowbells and a sea lasso to tame the seahorse.");
 			return false;
 		}
 		as_info("Looking for the wild seahorse in the Coral Corral.");
-		as_taskStuckTurns = 100;	//a rare encounter: nothing moves until it turns up
 		return as_seaAdv($location[The Coral Corral], "", "as_seahorseFilter");
 	}
 	if(get_property("intenseCurrents").to_boolean())
@@ -1792,11 +1902,10 @@ string[int] as_taskOrder()
 	return AS_TASKS;
 }
 
-// quest progress only: quest steps, counters and quest items. Turns spent while this stays the same got nowhere.
-string as_questSignature()
+string as_stateSignature()
 {
-	string sig = "";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll3, dreadScroll4, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
+	string sig = my_adventures() + "|" + my_fullness() + "|" + my_inebriety() + "|" + my_spleen_use() + "|";
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
 	{
 		sig += get_property(prop) + "|";
 	}
@@ -1805,11 +1914,6 @@ string as_questSignature()
 		sig += available_amount(it) + "|";
 	}
 	return sig;
-}
-
-string as_stateSignature()
-{
-	return my_adventures() + "|" + my_fullness() + "|" + my_inebriety() + "|" + my_spleen_use() + "|" + as_questSignature();
 }
 
 // ---------------------------------------------------------------- sea skills
