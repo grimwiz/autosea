@@ -548,9 +548,27 @@ boolean as_acquire(int qty, item it)
 	return true;
 }
 
-// a quest step's prerequisite: get it by any means, or stop autosea and say what's missing. Carrying on without it
-// spends turns that can't succeed (lasso practice once spent 196 turns with no lasso to throw).
+// a quest step's prerequisite: get it by any means. Carrying on without it spends turns that can't succeed (lasso
+// practice once spent 196 turns with no lasso to throw). Not getting it has three ordinary causes, each handled
+// as usual: out of adventures (carry on tomorrow), the collecting zone too dangerous for now (the quest loop farms
+// to get stronger and tries again), and bad luck (keep collecting: the usual cap is for deciding whether to buy).
+// Anything else means no way to get it is left, which should never happen: stop and say so.
 string as_stopReason;
+
+boolean as_needWaits(item it, string why)
+{
+	if(my_adventures() <= as_advReserve() + 1)
+	{
+		as_info("Out of adventures before getting " + it + " for " + why + "; that carries on next time.");
+		return true;
+	}
+	if(as_lastUnsafeZone != $location[none])
+	{
+		as_info(as_lastUnsafeZone + " is too dangerous for now to get " + it + " for " + why + "; getting stronger first.");
+		return true;
+	}
+	return false;
+}
 
 boolean as_need(int qty, item it, string why)
 {
@@ -558,7 +576,27 @@ boolean as_need(int qty, item it, string why)
 	{
 		return true;
 	}
-	as_stopReason = "Can't get " + qty + " " + it + " (have " + item_amount(it) + ") for " + why + ": stopping. The messages above say why.";
+	if(as_needWaits(it, why))
+	{
+		return false;
+	}
+	as_source src = as_dropSource(it);
+	if(src.how == "collect" && !as_collecting)
+	{
+		//five times the expected turns: running out of luck for that long is under 1%
+		int patience = ceil(src.turns * max(1, qty - item_amount(it)) * 5) + 5;
+		as_info("Still need " + it + " for " + why + ": collecting in " + src.loc + " until it drops (up to " + patience + " turns).");
+		if(as_collect(qty, it, src, patience))
+		{
+			return true;
+		}
+		if(as_needWaits(it, why))
+		{
+			return false;
+		}
+	}
+	as_stopReason = "No way left to get " + qty + " " + it + " (have " + item_amount(it) + ") for " + why
+		+ ". That shouldn't happen: it's an autosea bug or a state it doesn't understand, so stopping. The messages above say what was tried.";
 	as_warn(as_stopReason);
 	return false;
 }
