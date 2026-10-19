@@ -15,6 +15,7 @@ import <autosea/farm.ash>
 import <autosea/deepcity.ash>
 
 string as_currentTask;
+string as_stuckReason;	//set when a task stopped for lack of quest progress: autosea then stops for you to look
 
 // runs the first task with something to do. Returns false when no task acted.
 boolean as_runOneTask()
@@ -22,6 +23,7 @@ boolean as_runOneTask()
 	foreach i, name in as_taskOrder()
 	{
 		as_currentTask = name;
+		as_taskStuckTurns = 0;
 		if(call boolean name())
 		{
 			as_debug("task " + name + " acted");
@@ -35,6 +37,11 @@ boolean as_runOneTask()
 void as_run()
 {
 	int stuck = 0;
+	//turns spent with no quest progress: a task that keeps adventuring without moving the quest is missing
+	//something (run 101's aftercore spent 196 turns "practising" with no sea lasso to throw), so stop and say so
+	string questSig = as_questSignature();
+	int progressTurn = my_turncount();
+	int stuckTurns = as_setting("stuckTurns", "40").to_int();
 	while(true)
 	{
 		string before = as_stateSignature();
@@ -43,6 +50,19 @@ void as_run()
 		if(!as_runOneTask())
 		{
 			break;
+		}
+
+		if(as_questSignature() != questSig)
+		{
+			questSig = as_questSignature();
+			progressTurn = my_turncount();
+		}
+		else if(stuckTurns > 0 && my_turncount() - progressTurn >= max(stuckTurns, as_taskStuckTurns))
+		{
+			as_stuckReason = "Task " + as_currentTask + ": " + (my_turncount() - progressTurn) + " turns without any quest progress. Stopping: it is probably missing something.";
+			as_warn(as_stuckReason);
+			as_warn("Check what it needs, or \"set autosea_stuckTurns = 0\" to turn this check off.");
+			return;
 		}
 
 		// a task claimed to act but nothing changed: guard against spinning forever
@@ -74,6 +94,10 @@ void as_questLoop()
 		as_lastUnsafeZone = $location[none];
 		as_waitTurns = 0;
 		as_run();
+		if(as_stuckReason != "")
+		{
+			return;
+		}
 		location blocked = as_lastUnsafeZone;
 		if(as_waitTurns > 0 && my_adventures() > as_advReserve() + 2 && as_setting("farmWhileWaiting", "true").to_boolean())
 		{
@@ -190,8 +214,13 @@ void main(string... args)
 		else
 		{
 			as_questLoop();
+			if(as_stuckReason != "")
+			{
+				//no farming on top: the warning stays the last thing in the log, and the turns stay for after the fix
+				as_warn(as_stuckReason + " Not farming the remaining " + my_adventures() + " adventures.");
+			}
 			//nothing left to quest for: carry on farming, like autoscend carries on to the next task
-			if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
+			else if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
 			{
 				if(as_setting("farmAfterQuest", "true").to_boolean())
 				{

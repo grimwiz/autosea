@@ -65,6 +65,10 @@ int as_maxPrice()
 	return as_setting("maxPrice", "25000").to_int();
 }
 
+// turns a task may spend without quest progress before autosea stops (autosea_stuckTurns), for a task that
+// waits on something rare; reset before each task
+int as_taskStuckTurns = 0;
+
 // get qty of it into inventory without buying: from the closet, then from Hagnk's and your own mall store (when
 // allowed). Stock in your store is already yours: taking it back beats buying someone else's (a sea lasso is
 // about 3,900 in the mall, and your store held 67).
@@ -1705,6 +1709,7 @@ boolean as_seahorse()
 			return false;
 		}
 		as_info("Looking for the wild seahorse in the Coral Corral.");
+		as_taskStuckTurns = 100;	//a rare encounter: nothing moves until it turns up
 		return as_seaAdv($location[The Coral Corral], "", "as_seahorseFilter");
 	}
 	if(get_property("intenseCurrents").to_boolean())
@@ -1787,10 +1792,11 @@ string[int] as_taskOrder()
 	return AS_TASKS;
 }
 
-string as_stateSignature()
+// quest progress only: quest steps, counters and quest items. Turns spent while this stays the same got nowhere.
+string as_questSignature()
 {
-	string sig = my_adventures() + "|" + my_fullness() + "|" + my_inebriety() + "|" + my_spleen_use() + "|";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
+	string sig = "";
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll3, dreadScroll4, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
 	{
 		sig += get_property(prop) + "|";
 	}
@@ -1799,6 +1805,11 @@ string as_stateSignature()
 		sig += available_amount(it) + "|";
 	}
 	return sig;
+}
+
+string as_stateSignature()
+{
+	return my_adventures() + "|" + my_fullness() + "|" + my_inebriety() + "|" + my_spleen_use() + "|" + as_questSignature();
 }
 
 // ---------------------------------------------------------------- sea skills
