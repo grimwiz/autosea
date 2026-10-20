@@ -265,8 +265,8 @@ boolean as_merkinLibrary()
 // (about 3 turns per wrong phrase) before you can read again. The effect's length tells how many phrases
 // were wrong, so each new guess is chosen to agree with every earlier result (like Mastermind).
 // KoLmafia records each read in dreadScrollGuesses as "12341234:wrong,..." and clears it on ascension. (autosea
-// used to keep its own copy, which outlived the ascension: run 102 found no answer fitting its clues plus run
-// 101's reads.)
+// used to keep its own copy, which outlived the ascension: run 101 found no answer fitting its clues plus run
+// 100's reads.)
 
 int as_deepTaintedTurns()
 {
