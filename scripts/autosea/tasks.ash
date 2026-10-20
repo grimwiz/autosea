@@ -1943,7 +1943,7 @@ string[int] as_taskOrder()
 string as_stateSignature()
 {
 	string sig = my_adventures() + "|" + my_fullness() + "|" + my_inebriety() + "|" + my_spleen_use() + "|";
-	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, autosea_dreadGuesses]
+	foreach prop in $strings[questS01OldGuy, questS02Monkees, bigBrotherRescued, dampOldBootPurchased, hasSushiMat, mapToTheSkateParkPurchased, skateParkStatus, momSeaMonkeeProgress, intenseCurrents, corralUnlocked, seahorseName, lassoTrainingCount, merkinVocabularyMastery, merkinElementaryTeacherUnlock, dreadScroll1, dreadScroll2, dreadScroll3, dreadScroll4, dreadScroll5, dreadScroll6, dreadScroll7, dreadScroll8, merkinCatalogChoices, merkinQuestPath, isMerkinHighPriest, yogUrtDefeated, dreadScrollGuesses]
 	{
 		sig += get_property(prop) + "|";
 	}

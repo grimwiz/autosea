@@ -264,7 +264,9 @@ boolean as_merkinLibrary()
 // Fill in every known clue and guess the rest. Each wrong read costs a turn plus Deep-Tainted Mind
 // (about 3 turns per wrong phrase) before you can read again. The effect's length tells how many phrases
 // were wrong, so each new guess is chosen to agree with every earlier result (like Mastermind).
-// Guesses are stored in autosea_dreadGuesses as "12341234:wrong,...".
+// KoLmafia records each read in dreadScrollGuesses as "12341234:wrong,..." and clears it on ascension. (autosea
+// used to keep its own copy, which outlived the ascension: run 102 found no answer fitting its clues plus run
+// 101's reads.)
 
 int as_deepTaintedTurns()
 {
@@ -294,7 +296,7 @@ string as_nextDreadGuess()
 			unknown[count(unknown)] = n;
 		}
 	}
-	string[int] history = get_property("autosea_dreadGuesses").split_string(",");
+	string[int] history = get_property("dreadScrollGuesses").split_string(",");
 	int k = count(unknown);
 	int combos = 1;
 	for i from 1 to k
@@ -396,7 +398,9 @@ boolean as_readDreadscroll()
 	string guess = as_nextDreadGuess();
 	if(guess == "")
 	{
-		as_warn("No dreadscroll answer fits the known clues and earlier reads; check the dreadScroll settings.");
+		as_stopReason = "No dreadscroll answer fits the known clues (dreadScroll1-8) and earlier reads (dreadScrollGuesses)."
+			+ " That shouldn't happen: it's an autosea bug or a state it doesn't understand, so stopping.";
+		as_warn(as_stopReason);
 		return false;
 	}
 	as_ensureFishy();	//a wrong read costs 2 turns without Fishy
@@ -417,12 +421,11 @@ boolean as_readDreadscroll()
 	int wrong = taint > 0 ? (taint + 1) / 3 : 0;
 	if(wrong == 0)
 	{
-		as_warn("The dreadscroll read didn't give a result autosea recognises; stopping the guessing.");
+		as_stopReason = "The dreadscroll read didn't give a result autosea recognises, so stopping.";
+		as_warn(as_stopReason);
 		set_property("autosea_readWithoutWorktea", "false");
 		return false;
 	}
-	string history = get_property("autosea_dreadGuesses");
-	set_property("autosea_dreadGuesses", (history == "" ? "" : history + ",") + guess + ":" + wrong);
 	as_info(wrong + " phrase" + (wrong == 1 ? " was" : "s were") + " wrong; next guess after Deep-Tainted Mind wears off.");
 	return true;
 }
