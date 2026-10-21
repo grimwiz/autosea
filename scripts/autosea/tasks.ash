@@ -1955,6 +1955,71 @@ string as_stateSignature()
 	return sig;
 }
 
+// ---------------------------------------------------------------- Nash Crosby's Still
+// Accordion Thieves and Disco Bandits get 10 uses a day of the still in their guild, each turning an NPC-store
+// ingredient into a better one. In aftercore anything it makes can be bought or sold at mall price, so making
+// something to use yourself and making it to sell are worth the same: it makes whatever gains most over its
+// ingredient and lists it in your store a little under the mall price (autosea_stillSell). Ingredients come from
+// NPC stores only (not Ooze-O's sewage schnapps), so little meat is at stake. Run 101 left 30 uses unused in aftercore.
+// In a run, where the mall is closed, autoscend's bedtime makes what the run itself uses (tonic water for MP, booze).
+boolean[item] AS_STILL_PRODUCTS = $items[bottle of Calcutta Emerald, bottle of Definit, bottle of Domesticated Turkey,
+	bottle of Jorge Sinsonte, bottle of Lieutenant Freeman, bottle of Pete's Sake, boxed champagne, cocktail onion, kiwi,
+	kumquat, raspberry, tangerine, tonic water];
+
+item as_stillInput(item product)
+{
+	foreach it in get_ingredients(product)
+	{
+		return it;
+	}
+	return $item[none];
+}
+
+void as_useStill()
+{
+	if(stills_available() <= 0 || !guild_store_available() || !($classes[Accordion Thief, Disco Bandit] contains my_class())
+		|| !as_buyingAllowed() || !as_setting("useStill", "true").to_boolean())
+	{
+		return;
+	}
+	item best = $item[none];
+	int bestGain = 0;
+	foreach product in AS_STILL_PRODUCTS
+	{
+		int cost = npc_price(as_stillInput(product));
+		int gain = mall_price(product) - cost;
+		if(cost > 0 && gain > bestGain)
+		{
+			best = product;
+			bestGain = gain;
+		}
+	}
+	if(best == $item[none])
+	{
+		as_debug("Nash Crosby's Still: nothing it makes sells for more than its ingredient.");
+		return;
+	}
+	item input = as_stillInput(best);
+	int uses = stills_available();
+	int before = item_amount(best);
+	if(!retrieve_item(uses, input))
+	{
+		as_warn("Couldn't get " + uses + " " + input + " for Nash Crosby's Still.");
+		return;
+	}
+	create(uses, best);
+	int made = item_amount(best) - before;
+	as_info("Nash Crosby's Still: made " + made + " " + best + " from " + input + " (about " + bestGain + " meat each over the ingredient).");
+	if(made > 0 && as_setting("stillSell", "true").to_boolean())
+	{
+		int price = max(npc_price(input) + 1, floor(mall_price(best) * 0.97));
+		if(put_shop(price, 0, made, best))
+		{
+			as_info("Listed " + made + " " + best + " in your store at " + price + " each (autosea_stillSell).");
+		}
+	}
+}
+
 // ---------------------------------------------------------------- sea skills
 // Every permable skill the sea teaches: one per class from Grandpa's rescue, and Deep Dark Visions from the
 // Mer-kin darkbook (a 1% drop from Mer-kin researchers in the Library). A skill learned in one life only

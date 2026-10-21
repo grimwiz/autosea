@@ -159,6 +159,7 @@ void main(string... args)
 	as_takeOverSettings();
 	try
 	{
+		as_useStill();	//a daily chore with no turns: done first so a stop later on doesn't skip it
 		if(command == "farm")
 		{
 			int turns = count(words) > 1 ? words[1].to_int() : -1;	//no number: until adventures run out

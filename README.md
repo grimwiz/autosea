@@ -188,6 +188,8 @@ When collecting is cheaper, autosea goes and gets the item, tracking the monster
 | `autosea_selfSufficiency` | 1 | Above 1 favours in-game sources (1.5: collect even at up to 1.5 times the mall price) |
 | `autosea_useShop` | true | Take items back from your own mall store before buying or collecting them |
 | `autosea_collectMaxTurns` | 60 | Most turns spent collecting one batch |
+| `autosea_useStill` | true | As an Accordion Thief or Disco Bandit, use the day's Nash Crosby's Still uses on whatever gains most over its NPC-store ingredient |
+| `autosea_stillSell` | true | List what the still makes in your store, a little under the mall price |
 
 ### Collecting things you want for themselves
 
