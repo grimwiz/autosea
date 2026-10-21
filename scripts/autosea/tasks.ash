@@ -1059,6 +1059,7 @@ boolean as_chaseDolphin(location loc)
 	if(item_amount(stolen) > before)
 	{
 		//count the recovery as a turn in the zone it came from
+		as_dropsEarned += as_saleValue(stolen);
 		as_recordTurn(loc, value - as_whistleCost() + my_meat() - meatBefore);
 		return true;
 	}
@@ -2054,7 +2055,8 @@ void as_printStatus()
 		line("Vocabulary " + get_property("merkinVocabularyMastery") + "% (cheatsheets " + available_amount($item[Mer-kin cheatsheet]) + ")",
 			get_property("merkinVocabularyMastery").to_int() >= 100);
 		line("Worktea clue", get_property("dreadScroll7").to_int() != 0);
-		line("Mer-kin dreadscroll", available_amount($item[Mer-kin dreadscroll]) > 0);
+		//reading the right answer uses the dreadscroll up
+		line("Mer-kin dreadscroll", available_amount($item[Mer-kin dreadscroll]) > 0 || get_property("isMerkinHighPriest").to_boolean());
 		string clues = "";
 		for n from 1 to 8
 		{

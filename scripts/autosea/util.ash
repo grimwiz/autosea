@@ -420,6 +420,8 @@ boolean as_turnValueKnown(location loc)
 	return get_property("autosea_zoneValue_" + loc.to_int()) != "";
 }
 
+int as_dropsEarned;	//mall value of the items farming turns brought in this session, for the farming report
+
 void as_recordTurn(location loc, int value)
 {
 	string v = get_property("autosea_zoneValue_" + loc.to_int());
@@ -491,12 +493,9 @@ boolean as_wanted(item it)
 	return it == as_collectItem || available_amount(it) + storage_amount(it) + display_amount(it) < target;
 }
 
-int as_dropValue(item it)
+// what an item would sell for: mall price, or autosell if it can't be traded
+int as_saleValue(item it)
 {
-	if(as_wanted(it))
-	{
-		return as_setting("wantValue", "1000000").to_int();
-	}
 	if(it.tradeable)
 	{
 		int price = mall_price(it);
@@ -506,6 +505,11 @@ int as_dropValue(item it)
 		}
 	}
 	return max(0, autosell_price(it));
+}
+
+int as_dropValue(item it)
+{
+	return as_wanted(it) ? as_setting("wantValue", "1000000").to_int() : as_saleValue(it);
 }
 
 // conditional drops autosea knows how to switch on
@@ -770,6 +774,7 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 			foreach it, n in itemsBefore
 			{
 				value += max(0, item_amount(it) - n) * as_dropValue(it);
+				as_dropsEarned += max(0, item_amount(it) - n) * as_saleValue(it);
 			}
 			as_recordTurn(loc, value / (my_turncount() - turnsBefore));
 		}

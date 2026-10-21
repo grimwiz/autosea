@@ -403,6 +403,7 @@ void as_farm(int turns)
 	int startTurns = my_turncount();
 	int startMeat = my_meat();
 	int startSubs = as_totalSubstats();
+	int startDrops = as_dropsEarned;
 	boolean requireFishy = as_setting("farmRequireFishy", "true").to_boolean();
 
 	as_farmDiet();
@@ -490,6 +491,8 @@ void as_farm(int turns)
 	int spent = max(1, my_turncount() - startTurns);
 	int meat = my_meat() - startMeat;
 	int subs = as_totalSubstats() - startSubs;
-	as_info("Farmed " + (my_turncount() - startTurns) + " turns: " + meat + " meat (" + (meat / spent) + "/turn), "
-		+ subs + " substats (" + (subs / spent) + "/turn). Meat includes anything bought for Fishy.");
+	int drops = as_dropsEarned - startDrops;
+	as_info("Farmed " + (my_turncount() - startTurns) + " turns: " + meat + " meat and items worth about " + drops
+		+ " (" + ((meat + drops) / spent) + "/turn), " + subs + " substats (" + (subs / spent) + "/turn). "
+		+ "Meat includes anything bought for Fishy; items are at mall price.");
 }
