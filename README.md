@@ -34,7 +34,7 @@ Change these with `set autosea_<name> = <value>`.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `autosea_advReserve` | 2 | Adventures to leave unspent (never less than 2, since sea adventures can cost 2) |
+| `autosea_advReserve` | 0 | Adventures to leave unspent. Autosea already checks what the next adventure costs (2 without Fishy), and unspent adventures carry over at rollover |
 | `autosea_maximize` | `mainstat, moxie, 0.5 hp, 3 dr` | Extra maximizer terms added after `sea`. Sea monsters hit hard, so the default values survival as well as your fighting stat |
 | `autosea_hpThreshold` | 0.9 | Heal to full before a fight when HP is below this fraction of maximum |
 | `autosea_keepRecoveryScript` | `false` | Keep your own `recoveryScript` during the run. By default autosea switches it off and uses KoLmafia's built-in recovery, then restores it when it finishes |
@@ -248,9 +248,11 @@ Autosea pays for a buff only while **all the paid buffs running, added together,
 - **Spleen right away**, since nothing waits on it, but **keeping enough for sea jelly**. Without Fishy every sea adventure costs 2 turns, so 1 spleen of jelly (10 Fishy turns) is worth more than any spleen item's adventures. Autosea keeps 1 spleen per 10 of today's adventures that the other Fishy sources (Fishy already running, the Skate Park lutz, the fishy pipe, sushi while there's stomach room) won't cover. Autosea chews spleen items you own that give adventures, best adventures per spleen first. When farming for meat it adds a lustrous oyster egg (+50% Meat Drop). When nothing you own qualifies, it buys the cheapest 4-spleen paste or similar (ectoplasmic paste, grim fairy tale, powdered gold and so on), but only if its cost per adventure is below what your last farm zone earns a turn (`autosea_buySpleen = false` to stop that). It never chews Instant Karma, and never anything worth more than `autosea_spleenMaxValue` (5,000) in the mall.
 - **Food and drink only when adventures run low** (at your reserve plus `autosea_dietAt`, default 6), so your stomach and liver stay open for quest steps:
   - **Drinks first, in a batch:** up to `autosea_boozeBatch` (5) of `autosea_booze` (elemental caipiroska), with The Ode to Booze cast first if you know it and have a free song slot.
-  - **Then food:** `autosea_food` (autumn-spice donut), keeping 2 fullness free while the worktea clue is pending.
+  - **Then food:** `autosea_food` (autumn-spice donut), keeping 2 fullness free while the worktea clue can be done that day (after Mom, with a sushi mat).
   - Items come from your inventory, closet or Hagnk's first, then the mall up to `autosea_dietMaxPrice` (1,000) each.
-- `autosea_diet = false` turns all of this off.
+- **At the end of the day**, when there's not enough left for another sea adventure, nothing needs holding back: stomach, liver and spleen all come back at rollover. Autosea fills what's left with sushi first (its Fishy lasts into tomorrow), then the food and drink you own that give the most adventures per stomach or liver (never anything worth more in the mall than the adventures it gives). If that's enough for another adventure, it carries on.
+- **Bedtime:** once the adventures are spent, it drinks the best nightcap you own under The Ode to Booze and puts on gear for extra adventures at rollover (`maximize Adventures`). Run autosea again tomorrow and it switches back to sea gear.
+- `autosea_diet = false` turns all of this off (the rollover gear still goes on).
 
 ## Fishy
 

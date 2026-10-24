@@ -832,6 +832,8 @@ boolean as_dietTask()
 	return chewed || consumed;
 }
 
+void as_odeFor(int turns);
+
 // eat or drink when adventures run low; never touches the worktea fullness
 boolean as_dietTopUp()
 {
@@ -851,36 +853,7 @@ boolean as_dietTopUp()
 		if(as_fetch(drinks, booze) || (mall_price(booze) <= maxPrice && as_acquire(drinks, booze)) || item_amount(booze) > 0)
 		{
 			drinks = min(drinks, item_amount(booze));
-			if(have_skill($skill[The Ode to Booze]) && have_effect($effect[Ode to Booze]) == 0)
-			{
-				//song slots full: shrug the song with the fewest turns left (the buff step recasts it later), so the
-				//drinks get Ode's extra adventures
-				effect shortest = $effect[none];
-				foreach eff in my_effects()
-				{
-					if(eff.song && eff != $effect[Ode to Booze] && (shortest == $effect[none] || have_effect(eff) < have_effect(shortest)))
-					{
-						shortest = eff;
-					}
-				}
-				if(!as_skillFitsLimits($skill[The Ode to Booze]) && shortest != $effect[none])
-				{
-					as_info("Shrugging " + shortest + " to make room for The Ode to Booze.");
-					cli_execute("shrug " + shortest);
-				}
-			}
-			if(have_skill($skill[The Ode to Booze]))
-			{
-				while(have_effect($effect[Ode to Booze]) < drinks * booze.inebriety && my_mp() >= mp_cost($skill[The Ode to Booze]))
-				{
-					int odeBefore = have_effect($effect[Ode to Booze]);
-					use_skill(1, $skill[The Ode to Booze]);
-					if(have_effect($effect[Ode to Booze]) == odeBefore)
-					{
-						break;
-					}
-				}
-			}
+			as_odeFor(drinks * booze.inebriety);
 			as_info("Drinking " + drinks + " " + booze + (have_effect($effect[Ode to Booze]) > 0 ? " under The Ode to Booze." : "."));
 			//drinksilent: never stop an unattended run on KoLmafia's "drink without Ode?" question
 			drinksilent(drinks, booze);
@@ -902,6 +875,151 @@ boolean as_dietTopUp()
 		}
 	}
 	return false;
+}
+
+// The Ode to Booze for at least this many turns before drinking, if you know it
+void as_odeFor(int turns)
+{
+	if(have_skill($skill[The Ode to Booze]) && have_effect($effect[Ode to Booze]) == 0)
+	{
+		//song slots full: shrug the song with the fewest turns left (the buff step recasts it later), so the
+		//drinks get Ode's extra adventures
+		effect shortest = $effect[none];
+		foreach eff in my_effects()
+		{
+			if(eff.song && eff != $effect[Ode to Booze] && (shortest == $effect[none] || have_effect(eff) < have_effect(shortest)))
+			{
+				shortest = eff;
+			}
+		}
+		if(!as_skillFitsLimits($skill[The Ode to Booze]) && shortest != $effect[none])
+		{
+			as_info("Shrugging " + shortest + " to make room for The Ode to Booze.");
+			cli_execute("shrug " + shortest);
+		}
+	}
+	if(have_skill($skill[The Ode to Booze]))
+	{
+		while(have_effect($effect[Ode to Booze]) < turns && my_mp() >= mp_cost($skill[The Ode to Booze]))
+		{
+			int odeBefore = have_effect($effect[Ode to Booze]);
+			use_skill(1, $skill[The Ode to Booze]);
+			if(have_effect($effect[Ode to Booze]) == odeBefore)
+			{
+				break;
+			}
+		}
+	}
+}
+
+// ---------------------------------------------------------------- bedtime
+// When there's not enough left for another sea adventure, nothing held back is needed today: stomach, liver and
+// spleen all come back at rollover. Fill what's left with what you own (sushi first, since its Fishy lasts into
+// tomorrow), and if that gives enough for another adventure carry on. Otherwise drink a nightcap and wear
+// rollover-adventure gear.
+
+// the best food or drink you own that fits the room, by adventures per organ point (perOrgan) or in total.
+// Never something worth more in the mall than the adventures it gives.
+item as_bestOwnedConsumable(boolean food, int room, boolean perOrgan)
+{
+	item best = $item[none];
+	float bestScore = 0;
+	foreach it, n in get_inventory()
+	{
+		int size = food ? it.fullness : it.inebriety;
+		float adv = as_avgAdventures(it);
+		if(size <= 0 || size > room || adv <= 0 || it.levelreq > my_level()
+			|| it.notes.contains_text("Vampyre") || it.notes.contains_text("Zombie")
+			|| $items[beefy fish meat, glistening fish meat, slick fish meat, white rice, seaweed] contains it)	//sushi makings
+		{
+			continue;
+		}
+		if(it.tradeable && mall_price(it) / adv >= as_bestTurnValue())
+		{
+			continue;
+		}
+		float score = perOrgan ? adv / size : adv;
+		if(score > bestScore)
+		{
+			best = it;
+			bestScore = score;
+		}
+	}
+	return best;
+}
+
+// fill the organs that are left. Returns true if there's now enough for another sea adventure.
+boolean as_bedtimeTopUp()
+{
+	if(!as_setting("diet", "true").to_boolean() || as_haveAdventures())
+	{
+		return false;
+	}
+	as_dietSpleen();
+	while(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled() && fullness_limit() - my_fullness() >= 3
+		&& as_acquire(1, $item[beefy fish meat]) && as_acquire(1, $item[white rice]) && as_acquire(1, $item[seaweed]))
+	{
+		int before = my_fullness();
+		as_info("Rolling and eating a beefy maki with the stomach that's left (its Fishy lasts into tomorrow).");
+		cli_execute("create 1 beefy maki");
+		if(my_fullness() == before)
+		{
+			break;
+		}
+	}
+	while(fullness_limit() > my_fullness())
+	{
+		item food = as_bestOwnedConsumable(true, fullness_limit() - my_fullness(), true);
+		if(food == $item[none])
+		{
+			break;
+		}
+		int before = my_fullness();
+		as_info("Eating " + food + " with the stomach that's left.");
+		eatsilent(1, food);
+		if(my_fullness() == before)
+		{
+			break;
+		}
+	}
+	while(inebriety_limit() > my_inebriety())
+	{
+		item booze = as_bestOwnedConsumable(false, inebriety_limit() - my_inebriety(), true);
+		if(booze == $item[none])
+		{
+			break;
+		}
+		int before = my_inebriety();
+		as_odeFor(booze.inebriety);
+		as_info("Drinking " + booze + " with the liver that's left.");
+		drinksilent(1, booze);
+		if(my_inebriety() == before)
+		{
+			break;
+		}
+	}
+	return as_haveAdventures();
+}
+
+// a nightcap and rollover gear, once the day's adventures are spent
+void as_bedtime()
+{
+	if(as_haveAdventures())
+	{
+		return;
+	}
+	if(as_setting("diet", "true").to_boolean() && my_inebriety() <= inebriety_limit())
+	{
+		item cap = as_bestOwnedConsumable(false, 999, false);
+		if(cap != $item[none])
+		{
+			as_odeFor(cap.inebriety);
+			as_info("Drinking " + cap + " as a nightcap.");
+			overdrink(1, cap);
+		}
+	}
+	as_info("Wearing gear for extra adventures at rollover.");
+	maximize("Adventures, -tie", false);
 }
 
 // ---------------------------------------------------------------- Fishy (halves the cost of sea adventures)

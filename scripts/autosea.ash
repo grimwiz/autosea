@@ -160,63 +160,76 @@ void main(string... args)
 	try
 	{
 		as_useStill();	//a daily chore with no turns: done first so a stop later on doesn't skip it
-		if(command == "farm")
+		while(true)
 		{
-			int turns = count(words) > 1 ? words[1].to_int() : -1;	//no number: until adventures run out
-			as_farm(turns);
-		}
-		else if(command == "collect")
-		{
-			//"collect [how many] <item name> [turns]"
-			int turns = 0;
-			int qty = 1;
-			int first = 1;
-			int last = count(words) - 1;
-			if(last >= 2 && words[1].to_int() > 0 && words[1] == words[1].to_int().to_string())
+			if(command == "farm")
 			{
-				qty = words[1].to_int();
-				first = 2;
+				int turns = count(words) > 1 ? words[1].to_int() : -1;	//no number: until adventures run out
+				as_farm(turns);
 			}
-			if(last > first && words[last].to_int() > 0 && words[last] == words[last].to_int().to_string())
+			else if(command == "collect")
 			{
-				turns = words[last].to_int();
-				last -= 1;
-			}
-			string name = "";
-			for i from first to last
-			{
-				name += (name == "" ? "" : " ") + words[i];
-			}
-			if(name == "skills")
-			{
-				as_collectSeaSkills(turns);
-			}
-			else
-			{
-				as_collectCommand(name.to_item(), turns, qty);
-			}
-		}
-		else
-		{
-			as_questLoop();
-			if(as_stopReason != "")
-			{
-				//no farming on top: the reason stays the last thing in the log, and the turns stay for after
-				as_warn(as_stopReason + " Not farming the remaining " + my_adventures() + " adventures.");
-			}
-			//nothing left to quest for: carry on farming, like autoscend carries on to the next task
-			else if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
-			{
-				if(as_setting("farmAfterQuest", "true").to_boolean())
+				//"collect [how many] <item name> [turns]"
+				int turns = 0;
+				int qty = 1;
+				int first = 1;
+				int last = count(words) - 1;
+				if(last >= 2 && words[1].to_int() > 0 && words[1] == words[1].to_int().to_string())
 				{
-					as_info("The Sea Monkee quest is done; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
-					as_farm(-1);
+					qty = words[1].to_int();
+					first = 2;
+				}
+				if(last > first && words[last].to_int() > 0 && words[last] == words[last].to_int().to_string())
+				{
+					turns = words[last].to_int();
+					last -= 1;
+				}
+				string name = "";
+				for i from first to last
+				{
+					name += (name == "" ? "" : " ") + words[i];
+				}
+				if(name == "skills")
+				{
+					as_collectSeaSkills(turns);
 				}
 				else
 				{
-					as_info("The Sea Monkee quest is done; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
+					as_collectCommand(name.to_item(), turns, qty);
 				}
 			}
+			else
+			{
+				as_questLoop();
+				if(as_stopReason != "")
+				{
+					//no farming on top: the reason stays the last thing in the log, and the turns stay for after
+					as_warn(as_stopReason + " Not farming the remaining " + my_adventures() + " adventures.");
+				}
+				//nothing left to quest for: carry on farming, like autoscend carries on to the next task
+				else if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
+				{
+					if(as_setting("farmAfterQuest", "true").to_boolean())
+					{
+						as_info("The Sea Monkee quest is done; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
+						as_farm(-1);
+					}
+					else
+					{
+						as_info("The Sea Monkee quest is done; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
+					}
+				}
+			}
+			//out of adventures: fill what's left of stomach, liver and spleen, and carry on if that gave enough
+			if(as_stopReason != "" || !as_bedtimeTopUp())
+			{
+				break;
+			}
+			as_info("The leftover stomach, liver and spleen gave enough for more; carrying on with " + my_adventures() + " adventures.");
+		}
+		if(as_stopReason == "")
+		{
+			as_bedtime();	//a nightcap and rollover gear once the day's adventures are spent
 		}
 	}
 	finally

@@ -31,8 +31,9 @@ string as_setting(string name, string fallback)
 
 int as_advReserve()
 {
-	//adventures to leave unspent. Sea adventures cost 2 without Fishy, so never go below 2.
-	return max(2, as_setting("advReserve", "2").to_int());
+	//adventures to leave unspent. None by default: as_haveAdventures already checks what the next one costs
+	//(2 without Fishy), and adventures left at rollover carry over anyway.
+	return max(0, as_setting("advReserve", "0").to_int());
 }
 
 string as_maximizeExtra()
