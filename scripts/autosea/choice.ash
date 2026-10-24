@@ -42,7 +42,7 @@ void main(int choice, string page)
 				&& as_itemBeatsPearl($item[seaode], 0) ? 1 : 2);
 			return;
 		case 1589:	//Clubbed 'Em Into... (Club 'Em Across the Battlefield): a roll at the best zone monster's drops
-			run_choice(as_clubIntoOption());
+			as_clubInto(page);
 			return;
 		case 311:	//Heavily Invested in Pun Futures: the scale trades lose value at mall prices
 			run_choice(2);

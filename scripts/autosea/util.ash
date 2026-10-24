@@ -133,7 +133,7 @@ void as_takeOverSettings()
 // If a fight or choice was left open (for example in the relay browser), KoL redirects every action to it,
 // so item uses and adventures silently do nothing. Check before starting.
 
-int as_clubIntoOption();
+void as_clubInto(string page);
 
 boolean as_clearPendingEncounter()
 {
@@ -161,8 +161,9 @@ boolean as_clearPendingEncounter()
 				answer = 1;
 				break;
 			case 1589:	//Clubbed 'Em Into...: a roll at one zone monster's drops
-				answer = as_clubIntoOption();
-				break;
+				as_info("Finishing the open choice 1589 (Clubbed 'Em Into...).");
+				as_clubInto(page);
+				return true;
 		}
 		if(answer > 0)
 		{
@@ -577,37 +578,34 @@ float as_monsterItemValue(monster m, location loc, float itemBonus)
 }
 
 // Choice 1589, "Clubbed 'Em Into...": after Club 'Em Across the Battlefield (legendary seal-clubbing club) you pick a
-// monster from the zone and get a roll at its drops at your current item drop. Pick the one whose drops are worth the
-// most (wanted items count at autosea_wantValue); "nothing" if none is worth anything.
-int as_clubIntoOption()
+// monster from the zone and get a roll at its drops at your current item drop. Every monster's button is option 1
+// with the monster's id as "victim" (KoLmafia lists only the first of them); "nothing" is option 2. Pick the monster
+// on the page whose drops are worth the most (wanted items count at autosea_wantValue); "nothing" if none is worth anything.
+void as_clubInto(string page)
 {
-	int best = 0;
-	int nothing = 0;
+	monster best = $monster[none];
 	float bestValue = 0;
-	foreach option, text in available_choice_options()
+	string text = page.to_lower_case();
+	foreach m in appearance_rates(my_location())
 	{
-		string name = text.to_lower_case().replace_string(".", "");
-		foreach article in $strings[a, an, the]	//ASH trims spaces inside $strings[], so add the space here
+		if(m == $monster[none] || !text.contains_text(m.to_string().to_lower_case()))
 		{
-			if(name.starts_with(article + " "))
-			{
-				name = name.substring(length(article) + 1);
-			}
-		}
-		monster m = name.to_monster();
-		if(m == $monster[none])
-		{
-			nothing = option;
 			continue;
 		}
 		float value = as_monsterItemValue(m, my_location(), numeric_modifier("Item Drop"));
 		if(value > bestValue)
 		{
 			bestValue = value;
-			best = option;
+			best = m;
 		}
 	}
-	return best > 0 ? best : (nothing > 0 ? nothing : 1);
+	if(best == $monster[none])
+	{
+		run_choice(2);
+		return;
+	}
+	as_info("Clubbing it into " + best + " for a roll at its drops.");
+	run_choice(1, "victim=" + best.to_int());
 }
 
 // the same for a fight in the zone, averaged over its monsters
