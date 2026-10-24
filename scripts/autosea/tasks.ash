@@ -620,10 +620,12 @@ boolean as_sushiMatInstalled()
 item as_hatredItem();
 
 // fullness held back for quest steps that need to eat: the worktea clue (a self-rolled nigiri) is needed on
-// every Scholar route, so hold room from the moment that route is planned until the clue is known
+// every Scholar route, so hold room while the route is planned and the clue can be done today (after Mom, with
+// a sushi mat). Fullness comes back at rollover, so holding it on a day the clue can't happen only loses adventures.
 int as_fullnessReserve()
 {
-	if(get_property("dreadScroll7").to_int() != 0 || get_property("isMerkinHighPriest").to_boolean())
+	if(get_property("dreadScroll7").to_int() != 0 || get_property("isMerkinHighPriest").to_boolean()
+		|| get_property("questS02Monkees") != "finished" || !as_sushiMatInstalled())
 	{
 		return 0;
 	}
