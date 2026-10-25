@@ -368,8 +368,17 @@ location as_pickFarmZone(int turnsLeft)
 		//don't start a pearl that can't be finished today: the progress would be wasted at rollover
 		if(as_pearlAvailable(z.loc) && as_pearlFightsLeft(z.loc) > budget)
 		{
-			as_info("Not enough turns for the " + z.loc + " pearl (" + as_pearlFightsLeft(z.loc)
-				+ " fights at " + as_resistance(as_pearlElement(z.loc)) + " " + as_pearlElement(z.loc) + " resistance).");
+			//only worth saying when it's the day's adventures that are short, not a short wait being filled
+			string msg = "Not enough turns for the " + z.loc + " pearl (" + as_pearlFightsLeft(z.loc)
+				+ " fights at " + as_resistance(as_pearlElement(z.loc)) + " " + as_pearlElement(z.loc) + " resistance).";
+			if(turnsLeft < my_adventures() - as_advReserve())
+			{
+				as_debug(msg);
+			}
+			else
+			{
+				as_info(msg);
+			}
 			continue;
 		}
 		return z.loc;

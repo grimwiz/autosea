@@ -364,15 +364,15 @@ boolean as_readDreadscroll()
 		return false;
 	}
 	//clues you can simply look up: a Mer-kin knucklebone gives clue 4 (it's used up; autosea_keepKnucklebones
-	//holds some back, e.g. for an 11,037 Leagues run), and Deep Dark Visions gives clue 3 even if its damage
-	//beats you up
+	//holds some back, e.g. for an 11,037 Leagues run), and Deep Dark Visions sometimes gives clue 3, even if
+	//its damage beats you up (not every cast shows the phrase; a wrong guess only costs farmed turns)
 	item bone = $item[Mer-kin knucklebone];
 	if(!as_clueKnown(4) && available_amount(bone) > as_setting("keepKnucklebones", "0").to_int() && as_fetch(1, bone))
 	{
 		as_info("Using a Mer-kin knucklebone for dreadscroll clue 4.");
 		use(1, bone);
 	}
-	//Deep Dark Visions only works with at least 500 max HP (the phrase comes even if its damage beats you up)
+	//Deep Dark Visions only works with at least 500 max HP
 	if(!as_clueKnown(3) && have_skill($skill[Deep Dark Visions]) && my_maxhp() >= 500 && my_mp() >= mp_cost($skill[Deep Dark Visions]))
 	{
 		as_info("Casting Deep Dark Visions for dreadscroll clue 3.");
