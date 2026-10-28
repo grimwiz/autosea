@@ -281,6 +281,53 @@ boolean as_skillFitsLimits(skill sk)
 	return sk.to_string().index_of("Bind ") != 0;
 }
 
+// ---------------------------------------------------------------- defensive buffs
+// Your own buff skills that cut the damage you take or add HP or Moxie (Astral Shell, Reptilian Fortitude, the
+// Saucespheres...), kept up all the time: a few MP a turn is cheap to restore, saves healing after fights, and
+// the survival check counts them. Songs stay free for the farming buffs; skills costing anything but MP are skipped.
+boolean as_isDefensiveEffect(effect eff)
+{
+	foreach m in $strings[Damage Absorption, Damage Reduction, Maximum HP, Moxie, Cold Resistance, Hot Resistance,
+		Sleaze Resistance, Spooky Resistance, Stench Resistance]
+	{
+		if(numeric_modifier(eff, m) > 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void as_maintainDefensiveBuffs()
+{
+	foreach sk in $skills[]
+	{
+		if(!have_skill(sk) || sk.combat || sk.song || (as_failedSkills contains sk))
+		{
+			continue;
+		}
+		effect eff = sk.to_effect();
+		if(eff == $effect[none] || eff.song || have_effect(eff) > 0 || !as_isDefensiveEffect(eff))
+		{
+			continue;
+		}
+		if(adv_cost(sk) > 0 || hp_cost(sk) > 0 || soulsauce_cost(sk) > 0 || (sk.dailylimit > 0 && sk.timescast >= sk.dailylimit)
+			|| (sk.expression && as_expressionActive()))
+		{
+			continue;
+		}
+		if(my_mp() < mp_cost(sk))
+		{
+			restore_mp(mp_cost(sk));
+		}
+		if(my_mp() >= mp_cost(sk))
+		{
+			as_debug("defensive buff: " + sk);
+			as_runBoost("cast 1 " + sk, sk);
+		}
+	}
+}
+
 // ---------------------------------------------------------------- gear and recovery
 
 boolean as_equipForSea(string extra)
@@ -737,6 +784,7 @@ boolean as_adv(location loc, string extraMaximize, string filter)
 		as_warn("Can't breathe underwater (you or your familiar) for " + loc + ". Get a fishbowl, helmet or similar first.");
 		return false;
 	}
+	as_maintainDefensiveBuffs();
 	if(!as_zoneSafeQuiet(loc) && as_equipForSea(extraMaximize + (extraMaximize == "" ? "" : ", ") + as_defensiveTerms()) && as_zoneSafeQuiet(loc))
 	{
 		as_debug("defensive gear makes " + loc + " safe");
