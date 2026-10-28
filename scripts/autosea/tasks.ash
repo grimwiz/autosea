@@ -900,6 +900,11 @@ void as_odeFor(int turns)
 	}
 	if(have_skill($skill[The Ode to Booze]))
 	{
+		//MP is often low straight after a fight; restoring it costs far less than the adventures Ode adds
+		if(have_effect($effect[Ode to Booze]) < turns && my_mp() < mp_cost($skill[The Ode to Booze]))
+		{
+			restore_mp(mp_cost($skill[The Ode to Booze]));
+		}
 		while(have_effect($effect[Ode to Booze]) < turns && my_mp() >= mp_cost($skill[The Ode to Booze]))
 		{
 			int odeBefore = have_effect($effect[Ode to Booze]);
