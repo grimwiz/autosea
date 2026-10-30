@@ -935,7 +935,8 @@ item as_bestOwnedConsumable(boolean food, int room, boolean perOrgan)
 		float adv = as_avgAdventures(it);
 		if(size <= 0 || size > room || adv <= 0 || it.levelreq > my_level()
 			|| it.notes.contains_text("Vampyre") || it.notes.contains_text("Zombie")
-			|| $items[beefy fish meat, glistening fish meat, slick fish meat, white rice, seaweed] contains it)	//sushi makings
+			|| $items[beefy fish meat, glistening fish meat, slick fish meat, white rice, seaweed] contains it	//sushi makings
+			|| $items[slimy sweetbreads, slimy fermented bile bladder] contains it)	//kept for their Slime Tube buffs (autoslime)
 		{
 			continue;
 		}
@@ -951,6 +952,18 @@ item as_bestOwnedConsumable(boolean food, int room, boolean perOrgan)
 		}
 	}
 	return best;
+}
+
+boolean as_bedtimeTopUp();
+
+// "autosea diet": the usual food and drink (autosea_booze, autosea_food: fetched, or bought while an adventure from
+// them costs less than a turn earns), or else the best you own for the room that's left
+void as_dietNow()
+{
+	if(!as_dietTopUp())
+	{
+		as_bedtimeTopUp();
+	}
 }
 
 // fill the organs that are left. Returns true if there's now enough for another sea adventure.

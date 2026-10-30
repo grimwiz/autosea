@@ -8,6 +8,7 @@ since r29000;
 //   autosea          run until Mom is rescued, adventures run low, or something is missing
 //   autosea status   show progress without adventuring
 //   autosea farm [N] farm meat and stats in the best safe sea zone for N turns (default: all but the reserve)
+//   autosea diet     eat and drink for more adventures (the other auto scripts call this when they run out)
 
 import <autosea/util.ash>
 import <autosea/tasks.ash>
@@ -140,6 +141,17 @@ void main(string... args)
 	if(command == "status")
 	{
 		as_printStatus();
+		return;
+	}
+	//"autosea diet": eat and drink for more adventures and stop there. autoslime, autodread and autohobo call it
+	//when they run out of adventures, so every script fills the organs the same way.
+	if(command == "diet")
+	{
+		int before = my_adventures();
+		as_dietNow();
+		as_info(my_adventures() > before ? "Ate and drank for " + (my_adventures() - before) + " more adventures."
+			: "Nothing worth eating or drinking for more adventures (fullness " + my_fullness() + "/" + fullness_limit()
+				+ ", drunkenness " + my_inebriety() + "/" + inebriety_limit() + ", spleen " + my_spleen_use() + "/" + spleen_limit() + ").");
 		return;
 	}
 	//In 11,037 Leagues Under the Sea the Council's quests differ (both Elder Gods, five pearls, then the Nautical
