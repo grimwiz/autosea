@@ -151,6 +151,14 @@ void main(string... args)
 			+ "\"autosea farm\" still works.");
 		return;
 	}
+	//the Slime Tube's debuff hits at the start of every fight, anywhere, harder each turn: sea fights would be lost
+	//to it and the zones wrongly marked as too dangerous
+	if(have_effect($effect[Coated in Slime]) > 0)
+	{
+		as_warn("You're Coated in Slime: it hits you at the start of every fight, harder each turn, for "
+			+ have_effect($effect[Coated in Slime]) + " more turns. Spend those without fighting (rest, or noncombats), then run autosea.");
+		return;
+	}
 
 	if(!as_clearPendingEncounter())
 	{
