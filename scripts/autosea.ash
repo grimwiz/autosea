@@ -151,13 +151,19 @@ void main(string... args)
 			+ "\"autosea farm\" still works.");
 		return;
 	}
-	//the Slime Tube's debuff hits at the start of every fight, anywhere, harder each turn: sea fights would be lost
-	//to it and the zones wrongly marked as too dangerous
+	//the Slime Tube's debuff hits at the start of every fight, anywhere, for a share of max HP that grows as it
+	//runs down (290% with 3 turns left): sea fights would be lost to it and the zones wrongly marked as too
+	//dangerous. Shrugging can't remove it; a chamois from the clan's bucket by the tube can.
 	if(have_effect($effect[Coated in Slime]) > 0)
 	{
-		as_warn("You're Coated in Slime: it hits you at the start of every fight, harder each turn, for "
-			+ have_effect($effect[Coated in Slime]) + " more turns. Spend those without fighting (rest, or noncombats), then run autosea.");
-		return;
+		visit_url("clan_slimetube.php?action=chamois");
+		if(have_effect($effect[Coated in Slime]) > 0)
+		{
+			as_warn("You're Coated in Slime and the chamois didn't wipe it off. It hits you at the start of every fight, harder each turn, for "
+				+ have_effect($effect[Coated in Slime]) + " more turns. Spend those without fighting (rest, or noncombats), then run autosea.");
+			return;
+		}
+		as_info("Wiped off the Slime Tube's slime with a chamois (it would have hit in every fight).");
 	}
 
 	if(!as_clearPendingEncounter())
