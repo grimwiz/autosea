@@ -208,15 +208,6 @@ boolean as_haveAdventures()
 	return my_adventures() >= as_advReserve() + cost;
 }
 
-// farming stopped because Fishy ran out and nothing affordable gives more: the adventures left roll over to
-// tomorrow, so the day is over for the sea and bedtime (nightcap, rollover gear) should still happen
-boolean as_fishyRanOut = false;
-
-boolean as_seaDayOver()
-{
-	return !as_haveAdventures() || (as_fishyRanOut && !as_isFishy());
-}
-
 // ---------------------------------------------------------------- buff limits
 // The maximizer suggests every useful buff independently, ignoring limits: Accordion Thief songs (3, or 4 with
 // some gear), one expression at a time, and pasta thralls (binding one replaces the current one).

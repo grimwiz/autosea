@@ -956,7 +956,7 @@ item as_bestOwnedConsumable(boolean food, int room, boolean perOrgan)
 // fill the organs that are left. Returns true if there's now enough for another sea adventure.
 boolean as_bedtimeTopUp()
 {
-	if(!as_setting("diet", "true").to_boolean() || !as_seaDayOver())
+	if(!as_setting("diet", "true").to_boolean() || as_haveAdventures())
 	{
 		return false;
 	}
@@ -1003,13 +1003,13 @@ boolean as_bedtimeTopUp()
 			break;
 		}
 	}
-	return !as_seaDayOver();
+	return as_haveAdventures();
 }
 
 // a nightcap and rollover gear, once the day's adventures are spent
 void as_bedtime()
 {
-	if(!as_seaDayOver())
+	if(as_haveAdventures())
 	{
 		return;
 	}

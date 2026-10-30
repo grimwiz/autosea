@@ -414,7 +414,6 @@ void as_farm(int turns)
 	int startSubs = as_totalSubstats();
 	int startDrops = as_dropsEarned;
 	boolean requireFishy = as_setting("farmRequireFishy", "true").to_boolean();
-	as_fishyRanOut = false;
 
 	as_farmDiet();
 	as_farmPrep();
@@ -458,8 +457,7 @@ void as_farm(int turns)
 		as_farmFishbreath(zone);
 		if(requireFishy && !as_isFishy())
 		{
-			as_warn("Out of affordable Fishy; stopping rather than paying 2 adventures a turn (the " + my_adventures() + " left roll over).");
-			as_fishyRanOut = true;
+			as_warn("Out of affordable Fishy; stopping rather than paying 2 adventures a turn.");
 			break;
 		}
 		if(!as_farmEquipFor(zone))
