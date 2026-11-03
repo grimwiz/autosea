@@ -24,6 +24,8 @@ Update later with `git update`.
 autosea          do the Sea Monkee quest, then farm pearls and meat with the remaining adventures (set autosea_farmAfterQuest = false to stop instead)
 autosea status   show progress without adventuring
 autosea farm     farm meat and stats in the best safe sea zone (autosea farm 50 for 50 turns)
+autosea diet     eat and drink for more adventures, then stop (the other auto scripts call this)
+autosea bedtime  once the day's adventures are spent: a nightcap and rollover gear (the other auto scripts call this)
 ```
 
 You need to be level 11 (the Old Man won't talk to you before then), and the deeper zones expect a strong level-13+ character. Autosea equips underwater breathing for you and your familiar using KoLmafia's maximizer (`maximize sea`), so you need at least one way to breathe underwater (for example a fishbowl or a diving helmet).

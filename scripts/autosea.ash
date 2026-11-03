@@ -154,6 +154,13 @@ void main(string... args)
 				+ ", drunkenness " + my_inebriety() + "/" + inebriety_limit() + ", spleen " + my_spleen_use() + "/" + spleen_limit() + ").");
 		return;
 	}
+	//"autosea bedtime": a nightcap and rollover gear, only once the day's adventures are spent. The other auto scripts
+	//call it when they stop out of adventures, so every script ends the day the same way.
+	if(command == "bedtime")
+	{
+		as_bedtime();
+		return;
+	}
 	//In 11,037 Leagues Under the Sea the Council's quests differ (both Elder Gods, five pearls, then the Nautical
 	//Seaceress), so autosea's aftercore quest route would make the wrong choices. Farming is still fine.
 	if(my_path() == $path[11,037 Leagues Under the Sea] && command != "farm" && command != "collect")
