@@ -731,9 +731,10 @@ item as_spleenToBuy(int room)
 // so 1 spleen of jelly saves up to 10 turns, more than any spleen item gives in adventures. Keep enough to
 // cover today's adventures (plus moreAdventures about to be gained) that the other Fishy sources won't:
 // Fishy already running, the Skate Park lutz, the fishy pipe, and sushi while there's stomach room.
+// autosea_jellySpleen = false keeps none: autohobo sets it while it asks "autosea diet" to eat and drink for Hobopolis.
 int as_jellySpleenReserve(float moreAdventures)
 {
-	if(!as_setting("useSpleen", "true").to_boolean())
+	if(!as_setting("useSpleen", "true").to_boolean() || !as_setting("jellySpleen", "true").to_boolean())
 	{
 		return 0;
 	}
