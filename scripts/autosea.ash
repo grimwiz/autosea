@@ -14,6 +14,7 @@ import <autosea/util.ash>
 import <autosea/tasks.ash>
 import <autosea/farm.ash>
 import <autosea/deepcity.ash>
+import <autosea/dad.ash>
 
 string as_currentTask;
 

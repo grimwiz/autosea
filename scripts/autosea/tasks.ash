@@ -2074,6 +2074,7 @@ AS_TASKS[16] = "as_workteaClue";
 AS_TASKS[17] = "as_merkinLibrary";
 AS_TASKS[18] = "as_readDreadscroll";
 AS_TASKS[19] = "as_yogUrt";
+AS_TASKS[20] = "as_dadSeaMonkee";	//defined in dad.ash
 
 string[int] as_taskOrder()
 {
@@ -2269,6 +2270,7 @@ void as_printStatus()
 		print("  Dreadscroll clues known:" + (clues == "" ? " none" : clues) + " (the Library gives 1, 2, 5, 6, 8)", "black");
 		line("Mer-kin High Priest", get_property("isMerkinHighPriest").to_boolean());
 		line("Yog-Urt (" + as_hatredItem() + ")", get_property("yogUrtDefeated").to_boolean() || available_amount(as_hatredItem()) > 0);
+		line("Dad Sea Monkee (Pocket Square of Loathing, Instant Karma)", get_property("autosea_dadAscension").to_int() == my_ascensions());
 	}
 	as_printSeaSkills();
 	print("Pearls found today:", "blue");

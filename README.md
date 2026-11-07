@@ -50,6 +50,7 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_ignoreDanger` | `false` | Enter zones even when that check says you'd likely be beaten up |
 | `autosea_skatePark` / `autosea_sushiMat` | `true` | Do these optional steps |
 | `autosea_helmet` | `true` | Make an aerated diving helmet only if you have no other breathing hat (a Mer-kin mask is just as good). It crafts the rusty diving helmet if you hold all the parts, otherwise buys the cheaper of the helmet or the missing parts. `force` makes one anyway (for example to trade it to Grandma); `false` never does |
+| `autosea_dad` | `true` | Fight Dad Sea Monkee once you're ready (see below). `dryrun` checks and stops before entering; `false` never does |
 | `autosea_abyssPace` | `true` | With the legendary seal-clubbing club, stop the Abyss for the day once its 10 daily kills are spent (see below) |
 | `autosea_debug` | `false` | Print every decision |
 
@@ -98,6 +99,17 @@ It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 
   - tops up MP.
 
   In the fight it heals each Suckrament round (healscroll, band-aid, red pixel potion, poultice and so on, never anything that deals damage), then kills her with your best spell. `autosea_yogUrt = dryrun` checks everything and stops before entering; `false` skips her. After a loss it won't try again that run.
+
+## Dad Sea Monkee
+
+The Temple's third boss drops the Pocket Square of Loathing and an Instant Karma. He takes the Temple's one boss for the ascension, so autosea only fights him when the Scholar route isn't wanted (you already own your class's "of Hatred" piece), once the seahorse has opened the Deepcity. You need:
+
+- all six Hobopolis spells, one per element: Awesome Balls of Fire (or Volcanometeor Showeruption), Snowclone, Eggsplosion, Raise Backup Dancer, Grease Lightning, Toynado (or Shrap);
+- six pieces of the Clothing of Loathing (Goggles, Stick-Knife, Scepter, Jeans, Treads, Belt), which need **150 of each base stat**;
+- something to breathe with that leaves the outfit on: makeshift SCUBA gear or an old SCUBA tank (autosea buys the cheaper if you have neither). With the Pocket Square, the aerated diving helmet replaces the Goggles;
+- enough maximum MP for 10 spells (1,200, less with Mana Cost reductions) **without buffs**, because his fight removes every buff. The Jeans give 500; autosea estimates the rest from what you're wearing.
+
+The fight runs without a familiar, and no items can be used in it. Dad's opening text says which element he's weak to in each of rounds 1–10; KoLmafia decodes it (the `dad` command), and autosea casts that element's spell each round. If KoLmafia can't decode the clues, autosea stops in the fight for you. `autosea_dad = dryrun` checks everything and stops before entering; `false` skips him. After a loss it won't try again that run. While something is missing, `autosea status` and the run's messages say what.
 
 ## Unblemished pearls
 
