@@ -1,7 +1,7 @@
 // autosea: Dad Sea Monkee, the Mer-kin Temple's third boss. He drops the Pocket Square of Loathing and an Instant Karma.
 //
 // The Temple gives one boss per ascension, so Dad only gets it when the Scholar route (Yog-Urt) isn't wanted. To be let
-// in you wear six pieces of the Clothing of Loathing, which takes the hat slot, so you breathe with SCUBA gear instead.
+// in you wear six pieces of the Clothing of Loathing, which takes the hat slot, so you breathe with a potion or SCUBA gear.
 // Every buff is removed as the fight starts and no items can be used in it. Dad is weak to one element each round; his
 // opening text says which, and KoLmafia decodes it (the "dad" command). The right 120-MP Hobopolis spell each round wins
 // by round 10, so it takes 10 casts of MP with no buffs. He hits for about a tenth of your HP every round.
@@ -96,13 +96,53 @@ int as_dadUnbuffedMP()
 	return floor(withGear * my_maxmp() / withAll);
 }
 
-// Something to breathe with that leaves the outfit on: makeshift SCUBA gear (accessory) or an old SCUBA tank (back).
-// With the Pocket Square of Loathing as the sixth piece, the aerated diving helmet can take the Goggles' place.
+// Breathing underwater. Water-breathing effects only need to last through the Temple door (the fight removes buffs
+// anyway), and a potion leaves every slot free for MP gear, so that comes first: one already running, or the cheapest
+// potion, drunk just before going in. Otherwise something that leaves the outfit on: makeshift SCUBA gear (accessory)
+// or an old SCUBA tank (back); with the Pocket Square of Loathing as the sixth piece, the aerated diving helmet can
+// take the Goggles' place.
+boolean[effect] AS_BREATHING = $effects[Really Deep Breath, Pumped Stomach, Oxygenated Blood, Hyperoxygenated Blood,
+	Mer-kinny Flavor, Pneumatic, Driving Waterproofly];
+boolean[item] AS_BREATHING_POTIONS = $items[tempura air, ballast turtle, hyperinflated seal lung, pressurized potion of pneumaticity];
+
+item as_dadBreath = $item[none];	//the potion to use just before going in
+
+boolean as_dadBreathing()
+{
+	foreach eff in AS_BREATHING
+	{
+		if(have_effect(eff) > 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+item as_dadBreathPotion()
+{
+	item best = $item[none];
+	int bestPrice = as_maxPrice() + 1;
+	foreach it in AS_BREATHING_POTIONS
+	{
+		int price = item_amount(it) > 0 || closet_amount(it) > 0 || storage_amount(it) > 0 ? 0
+			: (as_buyingAllowed() && mall_price(it) > 0 ? mall_price(it) : bestPrice);
+		if(price < bestPrice)
+		{
+			best = it;
+			bestPrice = price;
+		}
+	}
+	return best;
+}
+
 string as_dadGear()
 {
-	string pieces = "";
+	as_dadBreath = as_dadBreathing() ? $item[none] : as_dadBreathPotion();
+	boolean potion = as_dadBreathing() || as_dadBreath != $item[none];
 	boolean square = available_amount($item[Pocket Square of Loathing]) > 0 || as_fetch(1, $item[Pocket Square of Loathing]);
-	boolean helmet = square && (available_amount($item[aerated diving helmet]) > 0 || as_fetch(1, $item[aerated diving helmet]));
+	boolean helmet = !potion && square && (available_amount($item[aerated diving helmet]) > 0 || as_fetch(1, $item[aerated diving helmet]));
+	string pieces = "";
 	foreach it in AS_DAD_OUTFIT
 	{
 		if(helmet && it == $item[Goggles of Loathing])
@@ -114,6 +154,10 @@ string as_dadGear()
 			return "";
 		}
 		pieces += ", +equip " + it;
+	}
+	if(potion)
+	{
+		return pieces + (square ? ", +equip Pocket Square of Loathing" : "");
 	}
 	if(helmet)
 	{
@@ -235,6 +279,15 @@ boolean as_dadSeaMonkee()
 		return false;
 	}
 	as_ensureFishy();
+	if(as_dadBreath != $item[none] && !as_dadBreathing())
+	{
+		if(!as_acquire(1, as_dadBreath) || !use(1, as_dadBreath) || !as_dadBreathing())
+		{
+			as_warn("Not fighting Dad Sea Monkee: couldn't use a " + as_dadBreath + " to breathe in the Temple.");
+			as_dadBlocked = true;
+			return false;
+		}
+	}
 	as_info("Entering the Mer-kin Temple to face Dad Sea Monkee.");
 	string choiceScript = get_property("choiceAdventureScript");
 	set_property("choiceAdventureScript", "");
