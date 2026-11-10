@@ -619,6 +619,55 @@ boolean as_sushiMatInstalled()
 
 item as_hatredItem();
 
+boolean as_haveAnywhere(item it)
+{
+	return available_amount(it) > 0 || storage_amount(it) > 0 || closet_amount(it) > 0;
+}
+
+// Each Hatred piece is smithed into a Clothing of Loathing piece, so once it's smithed it's gone but not missing.
+boolean as_hatredMissing()
+{
+	item[item] loathing = {
+		$item[Girdle of Hatred]: $item[Belt of Loathing],
+		$item[Lens of Hatred]: $item[Goggles of Loathing],
+		$item[Pantaloons of Hatred]: $item[Jeans of Loathing],
+		$item[Cold Stone of Hatred]: $item[Scepter of Loathing],
+		$item[Staff of Simmering Hatred]: $item[Stick-Knife of Loathing],
+		$item[Fuzzy Slippers of Hatred]: $item[Treads of Loathing]
+	};
+	item hatred = as_hatredItem();
+	return hatred != $item[none] && !as_haveAnywhere(hatred) && !as_haveAnywhere(loathing[hatred]);
+}
+
+// Dad Sea Monkee and Yog-Urt share the Mer-kin Temple: one boss an ascension. With all six Clothing of Loathing
+// pieces Dad can be fought, so the temple is kept for him (until autosea_dad = false, or he's beaten this
+// ascension) and the Scholar route isn't started. Run 106 took the Scholar route because the Pastamancer's
+// Staff of Simmering Hatred had been smithed into the Stick-Knife, and killed Yog-Urt before Dad was tried.
+boolean[item] AS_DAD_OUTFIT = $items[Goggles of Loathing, Stick-Knife of Loathing, Scepter of Loathing, Jeans of Loathing,
+	Treads of Loathing, Belt of Loathing];
+
+boolean as_templeForDad()
+{
+	if(as_setting("dad", "true") == "false" || get_property("autosea_dadAscension").to_int() == my_ascensions())
+	{
+		return false;
+	}
+	foreach it in AS_DAD_OUTFIT
+	{
+		if(!as_haveAnywhere(it))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+// the Scholar route (Yog-Urt) on autosea_deepcityPath = auto
+boolean as_wantScholar()
+{
+	return as_hatredMissing() && !as_templeForDad();
+}
+
 // fullness held back for quest steps that need to eat: the worktea clue (a self-rolled nigiri) is needed on
 // every Scholar route, so hold room while the route is planned and the clue can be done today (after Mom, with
 // a sushi mat). Fullness comes back at rollover, so holding it on a day the clue can't happen only loses adventures.
@@ -630,7 +679,7 @@ int as_fullnessReserve()
 		return 0;
 	}
 	string route = as_setting("deepcityPath", "auto");
-	boolean scholar = route == "scholar" || (route == "auto" && as_hatredItem() != $item[none] && available_amount(as_hatredItem()) == 0);
+	boolean scholar = route == "scholar" || (route == "auto" && as_wantScholar());
 	return scholar ? 2 : 0;
 }
 

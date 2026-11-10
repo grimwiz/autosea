@@ -74,7 +74,7 @@ With Deep Dark Visions permed and a knucklebone for each run, plus the worktea c
 
 ## The Mer-kin Deepcity (stage 1)
 
-Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is allowed per ascension, and its reward depends on your class. So `autosea_deepcityPath = auto` (the default) takes the Scholar route to Yog-Urt when you don't yet own your class's "of Hatred" piece. Stage 1 covers:
+Once the seahorse is tamed, autosea starts on the Deepcity. One Temple boss is allowed per ascension, and its reward depends on your class. So `autosea_deepcityPath = auto` (the default) takes the Scholar route to Yog-Urt when you don't yet own your class's "of Hatred" piece (one smithed into its Clothing of Loathing piece counts as owned). If you own all six Clothing of Loathing pieces, the temple is kept for Dad Sea Monkee instead, until you set `autosea_dad = false` or beat him this ascension. Stage 1 covers:
 
 - **Mer-kin Elementary School**, only if the Scholar route needs a Scholar's Vestments piece you don't have. The facecowl and waistrope are ingredients: Grandma makes the scholar mask from a crappy Mer-kin mask plus a facecowl, and the tailpiece from a crappy tailpiece plus a waistrope. Autosea unlocks the teacher's lounge and takes them from "Raising Cane", wearing another Mer-kin disguise, and olfacts the Mer-kin monitor (the only cheatsheet carrier) while it's there (`autosea_schoolGear`, `autosea_olfactMonitor`).
 - **Vocabulary:** uses a wordquiz with each cheatsheet for +10% each, up to `autosea_vocabTarget` (100). It uses any cheatsheets you already hold, and buys the rest. The School is the only other source, and they rarely drop there.
@@ -102,7 +102,7 @@ It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 
 
 ## Dad Sea Monkee
 
-The Temple's third boss drops the Pocket Square of Loathing and an Instant Karma. He takes the Temple's one boss for the ascension, so autosea only fights him when the Scholar route isn't wanted (you already own your class's "of Hatred" piece), once the seahorse has opened the Deepcity. You need:
+The Temple's third boss drops the Pocket Square of Loathing and an Instant Karma. He takes the Temple's one boss for the ascension, so once you own all six Clothing of Loathing pieces autosea keeps the temple for him and doesn't start the Scholar route; if he isn't possible yet (stats, MP), it says why and farms instead of taking Yog-Urt. He needs the seahorse to have opened the Deepcity. You need:
 
 - all six Hobopolis spells, one per element: Awesome Balls of Fire (or Volcanometeor Showeruption), Snowclone, Eggsplosion, Raise Backup Dancer, Grease Lightning, Toynado (or Shrap);
 - six pieces of the Clothing of Loathing (Goggles, Stick-Knife, Scepter, Jeans, Treads, Belt), which need **150 of each base stat**;

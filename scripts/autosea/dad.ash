@@ -11,9 +11,6 @@ import <autosea/deepcity.ash>
 boolean as_dadLost = false;	//a lost or failed attempt: not again this run
 boolean as_dadBlocked = false;	//not ready, and said so: don't prepare again this run
 
-boolean[item] AS_DAD_OUTFIT = $items[Goggles of Loathing, Stick-Knife of Loathing, Scepter of Loathing, Jeans of Loathing,
-	Treads of Loathing, Belt of Loathing];
-
 // the spells KoLmafia's Dad solver suggests, one element each; the first one you know is the one it names
 string[string] AS_DAD_SPELLS = {
 	"hot": "Awesome Balls of Fire, Volcanometeor Showeruption",
@@ -46,7 +43,7 @@ string as_dadProblem()
 	}
 	foreach it in AS_DAD_OUTFIT
 	{
-		if(available_amount(it) == 0 && storage_amount(it) == 0 && closet_amount(it) == 0)
+		if(!as_haveAnywhere(it))
 		{
 			return "no " + it;
 		}
