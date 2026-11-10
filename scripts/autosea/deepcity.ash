@@ -14,8 +14,7 @@ boolean as_deepcityOpen()
 }
 
 
-// "scholar", "gladiator" or "none". auto: scholar when this class's Hatred piece is missing (and not smithed into
-// its Loathing piece), unless the temple is kept for Dad Sea Monkee.
+// "scholar", "gladiator" or "none". auto: scholar when this class's Hatred piece is missing.
 string as_deepcityPath()
 {
 	string route = as_setting("deepcityPath", "auto");
