@@ -45,6 +45,9 @@ void as_run()
 	{
 		string before = as_stateSignature();
 		int turnsBefore = my_turncount();
+		//Mom's food as soon as she's rescued, not only once farming starts: the temple quest that follows is where
+		//the stats count (Dad needs 150 base of each), and run 106 went through the Outpost and Library without it
+		as_farmDailies();
 
 		if(!as_runOneTask())
 		{
