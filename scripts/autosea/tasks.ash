@@ -766,7 +766,8 @@ int as_jellySpleenReserve(float moreAdventures)
 	}
 	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled())
 	{
-		covered += 45 * floor((fullness_limit() - my_fullness() - as_fullnessReserve()) / 3);
+		int room = fullness_limit() - my_fullness() - as_fullnessReserve();
+		covered += 45 * floor(room / 3) + (room % 3 == 2 ? 20 : 0);	//maki, and a nigiri for 2 left over
 	}
 	float uncovered = my_adventures() + moreAdventures - covered;
 	return uncovered <= 0 ? 0 : ceil(uncovered / 10);
@@ -1087,12 +1088,17 @@ void as_ensureFishy(location loc)
 	}
 	//sushi: 3 fullness of food you'd eat anyway, 7-12 adventures and 45 Fishy. Ingredients come from the mall
 	//(fish meat ~100, seaweed ~140, white rice ~1000), which is far cheaper than farming fish meat underwater.
-	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled() && fullness_limit() - my_fullness() - as_fullnessReserve() >= 3)
+	//With only 2 fullness left, a beefy nigiri (no seaweed): 4-8 adventures and 20 Fishy. Run 106 stopped for want
+	//of Fishy with the spleen full and 2 fullness unused.
+	int room = fullness_limit() - my_fullness() - as_fullnessReserve();
+	if(as_setting("eatSushi", "true").to_boolean() && as_sushiMatInstalled() && room >= 2)
 	{
-		if(as_acquire(1, $item[beefy fish meat]) && as_acquire(1, $item[white rice]) && as_acquire(1, $item[seaweed]))
+		boolean maki = room >= 3;
+		if(as_acquire(1, $item[beefy fish meat]) && as_acquire(1, $item[white rice]) && (!maki || as_acquire(1, $item[seaweed])))
 		{
-			as_info("Rolling and eating a beefy maki for Fishy.");
-			cli_execute("create 1 beefy maki");	//sushi is rolled and eaten in one step
+			string sushi = maki ? "beefy maki" : "beefy nigiri";
+			as_info("Rolling and eating a " + sushi + " for Fishy.");
+			cli_execute("create 1 " + sushi);	//sushi is rolled and eaten in one step
 			if(as_isFishy()) return;
 			as_warn("Ate sushi but didn't get Fishy.");
 		}

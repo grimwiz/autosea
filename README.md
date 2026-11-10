@@ -43,7 +43,7 @@ Change these with `set autosea_<name> = <value>`.
 | `autosea_buy` | `true` | Buy from the mall what saves turns: sand dollars for Big Brother's shop, the rusty diving helmet, a skate blade, sea jelly for Fishy, and the Mom speed-up gear |
 | `autosea_maxPrice` | 25000 | Most autosea will pay for any single item |
 | `autosea_fishyMaxPrice` | 1000 | Most it will pay for a sea jelly (1 spleen, 10 turns of Fishy) |
-| `autosea_eatSushi` | `true` | With the sushi-rolling mat installed and 3 fullness free, buy fish meat, white rice and seaweed (about 1,250 meat) and eat a beefy maki: 7–12 adventures and 45 turns of Fishy |
+| `autosea_eatSushi` | `true` | With the sushi-rolling mat installed and 3 fullness free, buy fish meat, white rice and seaweed (about 1,250 meat) and eat a beefy maki: 7–12 adventures and 45 turns of Fishy. With only 2 fullness free, a beefy nigiri instead (no seaweed): 4–8 adventures and 20 turns |
 | `autosea_useSpleen` | `true` | Chew sea jelly for Fishy |
 | `autosea_jellySpleen` | `true` | Keep spleen free for the sea jelly the day's sea adventures need. autohobo turns this off while it calls `autosea diet`, since Fishy does nothing in Hobopolis |
 | `autosea_dangerRounds` | 4 | Skip a zone when its hardest monster's expected damage per round, times this many rounds, would take 90% of your maximum HP |
