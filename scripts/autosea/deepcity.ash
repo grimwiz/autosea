@@ -742,6 +742,21 @@ string as_yogProblem()
 	return "";
 }
 
+// Yog-Urt's gear: the maximizer statement, then prayerbeads in the accessory slots the gutgirdle leaves
+void as_yogWear(string gear, boolean useGirdle)
+{
+	maximize(gear, false);
+	int beads = useGirdle ? 2 : 3;
+	foreach s in $slots[acc1, acc2, acc3]
+	{
+		if(beads > 0 && equipped_item(s) != $item[Mer-kin gutgirdle])
+		{
+			equip(s, $item[Mer-kin prayerbeads]);
+			beads -= 1;
+		}
+	}
+}
+
 boolean as_yogUrt()
 {
 	if(as_yogLost || !as_deepcityOpen() || !get_property("isMerkinHighPriest").to_boolean() || get_property("yogUrtDefeated").to_boolean())
@@ -781,16 +796,37 @@ boolean as_yogUrt()
 	item girdle = $item[Mer-kin gutgirdle];
 	boolean useGirdle = as_setting("yogGutgirdle", "true").to_boolean() && can_equip(girdle)
 		&& (item_amount(girdle) > 0 || as_fetch(1, girdle));
-	maximize("sea, mysticality, 0.5 spell damage, 3 dr, 0.3 hp, 0.3 mp, -1 ml, +outfit Mer-kin Scholar's Vestments, -familiar, "
-		+ "-equip Drip harness, -equip PARTY HARD T-shirt, -equip red shirt" + (useGirdle ? ", +equip Mer-kin gutgirdle" : ""), false);
-	int beads = useGirdle ? 2 : 3;
-	foreach s in $slots[acc1, acc2, acc3]
+	string gear = "sea, mysticality, 0.5 spell damage, 3 dr, 0.3 hp, 0.3 mp, -1 ml, +outfit Mer-kin Scholar's Vestments, -familiar, "
+		+ "-equip Drip harness, -equip PARTY HARD T-shirt, -equip red shirt" + (useGirdle ? ", +equip Mer-kin gutgirdle" : "");
+	as_yogWear(gear, useGirdle);
+	//gear that adds flat max HP undoes the girdle (sea salt scrubs' +400 left 212 HP in the Suckrament, more than the
+	//healers held could cover): while they can't cover every round, leave off the worn piece that adds the most, and redo
+	for pass from 1 to 3
 	{
-		if(beads > 0 && equipped_item(s) != girdle)
+		boolean[item] plan;
+		if(!useGirdle || as_yogPlan(plan) >= 8 - as_beadsWorn())
 		{
-			equip(s, $item[Mer-kin prayerbeads]);
-			beads -= 1;
+			break;
 		}
+		item worst = $item[none];
+		float most = 0;
+		foreach s in $slots[hat, back, shirt, weapon, off-hand, pants, acc1, acc2, acc3]
+		{
+			item it = equipped_item(s);
+			float hp = numeric_modifier(it, "Maximum HP");
+			if(hp > most && !it.to_string().contains_text(","))	//a comma would split the maximizer statement
+			{
+				worst = it;
+				most = hp;
+			}
+		}
+		if(worst == $item[none])
+		{
+			break;
+		}
+		as_info("Leaving off the " + worst + " (+" + most.to_int() + " max HP): it would undo the Mer-kin gutgirdle.");
+		gear += ", -equip " + worst;
+		as_yogWear(gear, useGirdle);
 	}
 	if(useGirdle)
 	{

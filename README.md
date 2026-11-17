@@ -94,7 +94,10 @@ It stops once the dreadscroll and clues 1, 2, 5, 6 and 8 are known. Clues 3 and 
 - **Yog-Urt:** for the first rounds she casts More Like a Suckrament (5 rounds with 3 prayerbeads). During it your skills are disabled, you lose 80–90% of your HP every round, and **any damage to her kills you**. So before entering, autosea:
   - removes your familiar and every damage-dealing effect;
   - refuses to start if any gear has a damage aura or thorns;
-  - wears the Scholar's Vestments and 3 prayerbeads;
+  - wears the Scholar's Vestments and 3 prayerbeads, or, if you have the Mer-kin gutgirdle (`autosea_yogGutgirdle`,
+    on by default), the girdle and 2 prayerbeads. The girdle's -300 max HP brings your HP in the Suckrament down to
+    about 33, so any healer covers a round. If gear that adds max HP (such as sea salt scrubs) would leave more HP than
+    your healers can cover, it leaves that gear off;
   - makes sure it has a different healing item for every Suckrament round (each combat item works only once in the fight);
   - tops up MP.
 
