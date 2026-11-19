@@ -246,7 +246,25 @@ void main(string... args)
 				//nothing left to quest for: carry on farming, like autoscend carries on to the next task
 				else if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
 				{
-					if(as_setting("farmAfterQuest", "true").to_boolean())
+					//Dad Sea Monkee held back only by a base stat (the Clothing of Loathing needs 150 of each): raising
+					//it is the next step of the quest, so farm for it whatever autosea_farmAfterQuest says (user,
+					//2026-11-19: grimwiz stopped at base Muscle 116/150 saying the quest was done)
+					string dadNeeds = as_dadBlocked && !as_dadDone() ? as_dadProblem() : "";
+					if(dadNeeds.starts_with("base "))
+					{
+						as_farmStat = dadNeeds.substring(5, dadNeeds.index_of(" ", 5)).to_stat();
+						as_farmGoalOverride = "stats";
+						as_info("Dad Sea Monkee is next and needs " + dadNeeds + "; farming " + as_farmStat
+							+ " with the remaining " + my_adventures() + " adventures.");
+						as_farm(-1);
+						as_farmGoalOverride = "";
+						as_farmStat = $stat[none];
+					}
+					else if(dadNeeds != "")
+					{
+						as_info("Dad Sea Monkee is next but needs " + dadNeeds + "; stopping with " + my_adventures() + " adventures left.");
+					}
+					else if(as_setting("farmAfterQuest", "true").to_boolean())
 					{
 						as_info("The Sea Monkee quest is done; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
 						as_farm(-1);

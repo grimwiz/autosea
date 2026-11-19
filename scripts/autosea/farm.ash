@@ -12,10 +12,29 @@ record as_farmZone
 	int minLevel;
 };
 
+// For one farm: a goal instead of autosea_farmGoal, and the stat it's for. Dad Sea Monkee waiting on a base stat sets
+// these, so the farm raises that stat rather than the main one.
+string as_farmGoalOverride = "";
+stat as_farmStat = $stat[none];
+
 // "meat", "stats" or "both" (default)
 string as_farmGoal()
 {
+	if(as_farmGoalOverride != "")
+	{
+		return as_farmGoalOverride;
+	}
 	return as_setting("farmGoal", "both");
+}
+
+// the maximizer's experience term at this weight: your main stat's, or the stat this farm is for
+string as_expTerm(float weight)
+{
+	if(as_farmStat == $stat[none])
+	{
+		return weight + " exp";
+	}
+	return weight + " " + as_farmStat + " experience, " + weight + " " + as_farmStat + " experience percent";
 }
 
 as_farmZone[int] as_farmLadder()
@@ -101,7 +120,7 @@ string as_farmGear()
 	string gear = as_setting("farmMaximize", "meat, 1.5 mainstat, 0.5 hp, 2 dr");
 	if(as_farmGoal() != "meat" && !gear.contains_text("exp"))
 	{
-		gear += ", 2 exp";	//more stats per fight
+		gear += ", " + as_expTerm(2);	//more stats per fight
 	}
 	//Better Diver and meat drop; the maximizer doesn't value Better Diver on its own
 	foreach it in $items[aquamariner's necklace, aquamariner's ring]
@@ -148,7 +167,7 @@ string as_farmProfile(int i, location loc)
 	string gear;
 	switch(i)
 	{
-		case 0: gear = as_dropTerms(loc, stats ? 0.25 : 1.0) + (stats ? ", 3 exp" : ", 2 exp"); break;
+		case 0: gear = as_dropTerms(loc, stats ? 0.25 : 1.0) + ", " + as_expTerm(stats ? 3 : 2); break;
 		case 1: gear = as_dropTerms(loc, stats ? 0.15 : 0.5) + ", exp, 1 hp, 3 dr"; break;
 		default: gear = as_defensiveTerms() + ", 0.5 exp"; break;
 	}
@@ -319,7 +338,7 @@ void as_farmFishbreath(location zone)
 // one expression at a time, and never rebind a pasta thrall.
 void as_farmBuffs()
 {
-	string expr = as_farmGoal() == "stats" ? "exp" : as_farmGoal() == "both" ? "meat drop, 0.5 exp" : "meat drop";
+	string expr = as_farmGoal() == "stats" ? as_expTerm(1) : as_farmGoal() == "both" ? "meat drop, 0.5 exp" : "meat drop";
 	foreach i, entry in maximize(expr, 0, 0, true, false)
 	{
 		skill sk = entry.skill;
