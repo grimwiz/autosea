@@ -257,10 +257,9 @@ void main(string... args)
 					//it is the next step of the quest, so farm for it whatever autosea_farmAfterQuest says (user,
 					//2026-11-19: grimwiz stopped at base Muscle 116/150 saying the quest was done)
 					string dadNeeds = as_dadBlocked && !as_dadDone() ? as_dadProblem() : "";
-					//Dreadsylvania opens at level 15, and its ghost pencil, the carriageman's zones and a map place
-					//recorded with the pencil come before Dad: level in the sea to 15 on the main stat, run "autodread
-					//map" (collect the pencil, then unlock a map place), then farm Dad's stat (user, 2026-11-20: "then
-					//dreadsylvania for pencil and zone unlock"; plain "autodread pencil" only collects it)
+					//Dreadsylvania opens at level 15, and it comes before Dad (user, 2026-11-20): level in the sea to
+					//15 on the main stat and stop there. Dreadsylvania is a separate run (autosea never calls
+					//autodread); the next autosea run, at 15 or more, farms Dad's stat
 					if(dadNeeds.starts_with("base "))
 					{
 						//"autosea N" stops at the end of each of these steps, so they can be watched one at a time
@@ -277,13 +276,13 @@ void main(string... args)
 							as_farmGoalOverride = "";
 							as_farmStat = $stat[none];
 							stepDone = true;
+							if(my_level() >= 15)
+							{
+								as_info("Level " + my_level() + ": stopping here, with " + my_adventures()
+									+ " adventures, for Dreadsylvania before Dad Sea Monkee.");
+							}
 						}
-						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
-						{
-							as_dreadMap();
-							stepDone = true;
-						}
-						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
+						if(!stepDone && my_level() >= 15 && as_haveAdventures())
 						{
 							//questing comes first: the farm stops once the stat is there, and the day goes back to
 							//the quest for Dad (user, 2026-11-20: grimwiz reached 150 Muscle and farmed 100 more turns)
