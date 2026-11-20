@@ -988,7 +988,7 @@ void as_dietNow()
 // fill the organs that are left. Returns true if there's now enough for another sea adventure.
 boolean as_bedtimeTopUp()
 {
-	if(!as_setting("diet", "true").to_boolean() || as_haveAdventures())
+	if(!as_setting("diet", "true").to_boolean() || as_haveAdventures() || as_turnLimit > 0)
 	{
 		return false;
 	}
@@ -1041,7 +1041,7 @@ boolean as_bedtimeTopUp()
 // a nightcap and rollover gear, once the day's adventures are spent
 void as_bedtime()
 {
-	if(as_haveAdventures())
+	if(as_haveAdventures() || as_turnLimit > 0)
 	{
 		return;
 	}

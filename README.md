@@ -22,6 +22,7 @@ Update later with `git update`.
 
 ```
 autosea          do the Sea Monkee quest, then farm pearls and meat with the remaining adventures (set autosea_farmAfterQuest = false to stop instead)
+autosea 20       the same, for at most 20 turns and one step at a time; no bedtime, so the rest of the day stays
 autosea status   show progress without adventuring
 autosea farm     farm meat and stats in the best safe sea zone (autosea farm 50 for 50 turns)
 autosea diet     eat and drink for more adventures, then stop (the other auto scripts call this)

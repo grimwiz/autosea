@@ -414,6 +414,10 @@ int as_totalSubstats()
 // turns < 0: farm until adventures run out, eating and drinking for more as autosea's diet allows
 boolean as_farmMoreTurns(int turns, int startTurns)
 {
+	if(as_turnLimitReached())
+	{
+		return false;
+	}
 	if(as_farmUntilLevel > 0 && my_level() >= as_farmUntilLevel)
 	{
 		return false;

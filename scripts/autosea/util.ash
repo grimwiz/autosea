@@ -29,6 +29,15 @@ string as_setting(string name, string fallback)
 	return value == "" ? fallback : value;
 }
 
+// "autosea N": the turn to stop at (0: no limit). The day's logic runs as usual, a step at a time, and stops there
+// without the end-of-day top-up or bedtime, so the rest of the day's adventures stay (user, 2026-11-20).
+int as_turnLimit = 0;
+
+boolean as_turnLimitReached()
+{
+	return as_turnLimit > 0 && my_turncount() >= as_turnLimit;
+}
+
 int as_advReserve()
 {
 	//adventures to leave unspent. None by default: as_haveAdventures already checks what the next one costs
@@ -205,7 +214,7 @@ boolean as_haveAdventures()
 {
 	//without Fishy an underwater adventure costs 2
 	int cost = as_isFishy() ? 1 : 2;
-	return my_adventures() >= as_advReserve() + cost;
+	return !as_turnLimitReached() && my_adventures() >= as_advReserve() + cost;
 }
 
 // ---------------------------------------------------------------- buff limits

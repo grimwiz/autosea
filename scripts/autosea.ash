@@ -137,6 +137,12 @@ void main(string... args)
 		words[count(words)] = m.group(0);
 	}
 	string command = count(words) > 0 ? words[0] : "";
+	//"autosea N": the usual day for at most N turns, one step at a time
+	if(command != "" && command.to_int() > 0 && command == command.to_int().to_string())
+	{
+		as_turnLimit = my_turncount() + command.to_int();
+		command = "";
+	}
 	if(my_level() < 11)
 	{
 		as_warn("The Old Man only talks to you from level 11.");
@@ -255,6 +261,8 @@ void main(string... args)
 					//(user, 2026-11-20)
 					if(dadNeeds.starts_with("base "))
 					{
+						//"autosea N" stops at the end of each of these steps, so they can be watched one at a time
+						boolean stepDone = false;
 						if(my_level() < 15)
 						{
 							as_farmStat = my_primestat();
@@ -266,13 +274,15 @@ void main(string... args)
 							as_farmUntilLevel = 0;
 							as_farmGoalOverride = "";
 							as_farmStat = $stat[none];
+							stepDone = true;
 						}
-						if(my_level() >= 15 && as_haveAdventures())
+						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
 						{
 							as_info("Level " + my_level() + ": Dreadsylvania's ghost pencil first (autodread pencil), then Dad Sea Monkee.");
 							cli_execute("autodread pencil");
+							stepDone = true;
 						}
-						if(my_level() >= 15 && as_haveAdventures())
+						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
 						{
 							as_farmStat = dadNeeds.substring(5, dadNeeds.index_of(" ", 5)).to_stat();
 							as_farmGoalOverride = "stats";
@@ -304,6 +314,11 @@ void main(string... args)
 				break;
 			}
 			as_info("The leftover stomach, liver and spleen gave enough for more; carrying on with " + my_adventures() + " adventures.");
+		}
+		if(as_turnLimit > 0)
+		{
+			as_info("Stopped at turn " + my_turncount() + " (autosea with a turn limit), level " + my_level() + ", with "
+				+ my_adventures() + " adventures left.");
 		}
 		if(as_stopReason == "")
 		{
