@@ -257,32 +257,9 @@ void main(string... args)
 					//it is the next step of the quest, so farm for it whatever autosea_farmAfterQuest says (user,
 					//2026-11-19: grimwiz stopped at base Muscle 116/150 saying the quest was done)
 					string dadNeeds = as_dadBlocked && !as_dadDone() ? as_dadProblem() : "";
-					//Dreadsylvania opens at level 15, and it comes before Dad (user, 2026-11-20): level in the sea to
-					//15 on the main stat and stop there. Dreadsylvania is a separate run (autosea never calls
-					//autodread); the next autosea run, at 15 or more, farms Dad's stat
 					if(dadNeeds.starts_with("base "))
 					{
-						//"autosea N" stops at the end of each of these steps, so they can be watched one at a time
-						boolean stepDone = false;
-						if(my_level() < 15)
-						{
-							as_farmStat = my_primestat();
-							as_farmGoalOverride = "stats";
-							as_farmUntilLevel = 15;
-							as_info("Dad Sea Monkee needs " + dadNeeds + ", but Dreadsylvania opens at level 15: farming "
-								+ my_primestat() + " to level 15 first (level " + my_level() + " now).");
-							as_farm(-1);
-							as_farmUntilLevel = 0;
-							as_farmGoalOverride = "";
-							as_farmStat = $stat[none];
-							stepDone = true;
-							if(my_level() >= 15)
-							{
-								as_info("Level " + my_level() + ": stopping here, with " + my_adventures()
-									+ " adventures, for Dreadsylvania before Dad Sea Monkee.");
-							}
-						}
-						if(!stepDone && my_level() >= 15 && as_haveAdventures())
+						if(as_haveAdventures())
 						{
 							//questing comes first: the farm stops once the stat is there, and the day goes back to
 							//the quest for Dad (user, 2026-11-20: grimwiz reached 150 Muscle and farmed 100 more turns)
@@ -301,18 +278,18 @@ void main(string... args)
 							as_farmStat = $stat[none];
 						}
 					}
-					else if(dadNeeds != "")
-					{
-						as_info("Dad Sea Monkee is next but needs " + dadNeeds + "; stopping with " + my_adventures() + " adventures left.");
-					}
+					//anything else holding Dad back: nothing left to quest for today, so farm rather than stop, unless
+					//told not to (user, 2026-11-20: "autosea is NOT to stop unless told otherwise")
 					else if(as_setting("farmAfterQuest", "true").to_boolean())
 					{
-						as_info("The Sea Monkee quest is done; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
+						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds + ", and nothing else is left to quest for"
+							: "The Sea Monkee quest is done") + "; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
 						as_farm(-1);
 					}
 					else
 					{
-						as_info("The Sea Monkee quest is done; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
+						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds : "The Sea Monkee quest is done")
+							+ "; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
 					}
 				}
 			}

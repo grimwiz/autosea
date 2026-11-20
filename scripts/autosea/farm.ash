@@ -16,7 +16,6 @@ record as_farmZone
 // these, so the farm raises that stat rather than the main one.
 string as_farmGoalOverride = "";
 stat as_farmStat = $stat[none];
-int as_farmUntilLevel = 0;		//stop farming on reaching this level (0: no level stop)
 stat as_farmUntilStat = $stat[none];	//stop farming once this base stat reaches as_farmUntilBase
 int as_farmUntilBase = 0;
 
@@ -417,10 +416,6 @@ int as_totalSubstats()
 boolean as_farmMoreTurns(int turns, int startTurns)
 {
 	if(as_turnLimitReached())
-	{
-		return false;
-	}
-	if(as_farmUntilLevel > 0 && my_level() >= as_farmUntilLevel)
 	{
 		return false;
 	}
