@@ -224,8 +224,31 @@ string as_dadFilter(int round, monster enemy, string text)
 	return "attack";
 }
 
+// Dreadsylvania before Dad (user, 2026-11-20: "run the sea until level 15, then dreadsylvania for pencil and zone
+// unlock, then back for dad"): "autodread map" opens the carriageman's zones, collects the instance's ghost pencil and
+// records a map place with it. Once a run; it spends no turns when there's nothing left to do, and "autosea N" passes
+// on what's left of its limit.
+boolean as_dreadMapTried = false;
+boolean as_dreadMap()
+{
+	if(as_dreadMapTried || my_level() < 15 || as_turnLimitReached())
+	{
+		return false;
+	}
+	as_dreadMapTried = true;
+	int before = my_turncount();
+	as_info("Before Dad Sea Monkee: Dreadsylvania's zones, its ghost pencil and a place on your map (autodread map).");
+	cli_execute("autodread map" + (as_turnLimit > 0 ? " " + (as_turnLimit - my_turncount()) : ""));
+	return my_turncount() > before;
+}
+
 boolean as_dadSeaMonkee()
 {
+	if(!as_dadLost && !as_dadDone() && as_deepcityOpen() && as_deepcityPath() != "scholar"
+		&& as_setting("dad", "true") != "false" && as_dreadMap())
+	{
+		return true;
+	}
 	if(as_dadLost || as_dadBlocked || as_dadDone() || !as_deepcityOpen() || as_deepcityPath() == "scholar")
 	{
 		return false;

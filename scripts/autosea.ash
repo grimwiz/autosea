@@ -257,9 +257,10 @@ void main(string... args)
 					//it is the next step of the quest, so farm for it whatever autosea_farmAfterQuest says (user,
 					//2026-11-19: grimwiz stopped at base Muscle 116/150 saying the quest was done)
 					string dadNeeds = as_dadBlocked && !as_dadDone() ? as_dadProblem() : "";
-					//Dreadsylvania opens at level 15, and its ghost pencil (and the carriageman's zones) come before
-					//Dad: level in the sea to 15 on the main stat, run autodread for the pencil, then farm Dad's stat
-					//(user, 2026-11-20)
+					//Dreadsylvania opens at level 15, and its ghost pencil, the carriageman's zones and a map place
+					//recorded with the pencil come before Dad: level in the sea to 15 on the main stat, run "autodread
+					//map" (collect the pencil, then unlock a map place), then farm Dad's stat (user, 2026-11-20: "then
+					//dreadsylvania for pencil and zone unlock"; plain "autodread pencil" only collects it)
 					if(dadNeeds.starts_with("base "))
 					{
 						//"autosea N" stops at the end of each of these steps, so they can be watched one at a time
@@ -279,8 +280,7 @@ void main(string... args)
 						}
 						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
 						{
-							as_info("Level " + my_level() + ": Dreadsylvania's ghost pencil first (autodread pencil), then Dad Sea Monkee.");
-							cli_execute("autodread pencil");
+							as_dreadMap();
 							stepDone = true;
 						}
 						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
