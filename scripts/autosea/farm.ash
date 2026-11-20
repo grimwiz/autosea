@@ -16,6 +16,7 @@ record as_farmZone
 // these, so the farm raises that stat rather than the main one.
 string as_farmGoalOverride = "";
 stat as_farmStat = $stat[none];
+int as_farmUntilLevel = 0;		//stop farming on reaching this level (0: no level stop)
 
 // "meat", "stats" or "both" (default)
 string as_farmGoal()
@@ -413,6 +414,10 @@ int as_totalSubstats()
 // turns < 0: farm until adventures run out, eating and drinking for more as autosea's diet allows
 boolean as_farmMoreTurns(int turns, int startTurns)
 {
+	if(as_farmUntilLevel > 0 && my_level() >= as_farmUntilLevel)
+	{
+		return false;
+	}
 	if(turns >= 0)
 	{
 		return my_turncount() - startTurns < turns;

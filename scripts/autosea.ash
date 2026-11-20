@@ -250,15 +250,38 @@ void main(string... args)
 					//it is the next step of the quest, so farm for it whatever autosea_farmAfterQuest says (user,
 					//2026-11-19: grimwiz stopped at base Muscle 116/150 saying the quest was done)
 					string dadNeeds = as_dadBlocked && !as_dadDone() ? as_dadProblem() : "";
+					//Dreadsylvania opens at level 15, and its ghost pencil (and the carriageman's zones) come before
+					//Dad: level in the sea to 15 on the main stat, run autodread for the pencil, then farm Dad's stat
+					//(user, 2026-11-20)
 					if(dadNeeds.starts_with("base "))
 					{
-						as_farmStat = dadNeeds.substring(5, dadNeeds.index_of(" ", 5)).to_stat();
-						as_farmGoalOverride = "stats";
-						as_info("Dad Sea Monkee is next and needs " + dadNeeds + "; farming " + as_farmStat
-							+ " with the remaining " + my_adventures() + " adventures.");
-						as_farm(-1);
-						as_farmGoalOverride = "";
-						as_farmStat = $stat[none];
+						if(my_level() < 15)
+						{
+							as_farmStat = my_primestat();
+							as_farmGoalOverride = "stats";
+							as_farmUntilLevel = 15;
+							as_info("Dad Sea Monkee needs " + dadNeeds + ", but Dreadsylvania opens at level 15: farming "
+								+ my_primestat() + " to level 15 first (level " + my_level() + " now).");
+							as_farm(-1);
+							as_farmUntilLevel = 0;
+							as_farmGoalOverride = "";
+							as_farmStat = $stat[none];
+						}
+						if(my_level() >= 15 && as_haveAdventures())
+						{
+							as_info("Level " + my_level() + ": Dreadsylvania's ghost pencil first (autodread pencil), then Dad Sea Monkee.");
+							cli_execute("autodread pencil");
+						}
+						if(my_level() >= 15 && as_haveAdventures())
+						{
+							as_farmStat = dadNeeds.substring(5, dadNeeds.index_of(" ", 5)).to_stat();
+							as_farmGoalOverride = "stats";
+							as_info("Dad Sea Monkee is next and needs " + dadNeeds + "; farming " + as_farmStat
+								+ " with the remaining " + my_adventures() + " adventures.");
+							as_farm(-1);
+							as_farmGoalOverride = "";
+							as_farmStat = $stat[none];
+						}
 					}
 					else if(dadNeeds != "")
 					{
