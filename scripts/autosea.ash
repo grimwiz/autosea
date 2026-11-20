@@ -205,6 +205,7 @@ void main(string... args)
 		as_useStill();	//a daily chore with no turns: done first so a stop later on doesn't skip it
 		while(true)
 		{
+			boolean questAgain = false;		//a farm reached what the quest was waiting for: quest before farming more
 			if(command == "farm")
 			{
 				int turns = count(words) > 1 ? words[1].to_int() : -1;	//no number: until adventures run out
@@ -284,11 +285,19 @@ void main(string... args)
 						}
 						if(!(stepDone && as_turnLimit > 0) && my_level() >= 15 && as_haveAdventures())
 						{
+							//questing comes first: the farm stops once the stat is there, and the day goes back to
+							//the quest for Dad (user, 2026-11-20: grimwiz reached 150 Muscle and farmed 100 more turns)
 							as_farmStat = dadNeeds.substring(5, dadNeeds.index_of(" ", 5)).to_stat();
+							matcher need = create_matcher("/(\\d+)", dadNeeds);
+							as_farmUntilStat = as_farmStat;
+							as_farmUntilBase = need.find() ? need.group(1).to_int() : 150;
 							as_farmGoalOverride = "stats";
 							as_info("Dad Sea Monkee is next and needs " + dadNeeds + "; farming " + as_farmStat
-								+ " with the remaining " + my_adventures() + " adventures.");
+								+ " until it's there.");
 							as_farm(-1);
+							questAgain = my_basestat(as_farmUntilStat) >= as_farmUntilBase && as_haveAdventures();
+							as_farmUntilStat = $stat[none];
+							as_farmUntilBase = 0;
 							as_farmGoalOverride = "";
 							as_farmStat = $stat[none];
 						}
@@ -307,6 +316,11 @@ void main(string... args)
 						as_info("The Sea Monkee quest is done; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
 					}
 				}
+			}
+			if(questAgain && as_stopReason == "")
+			{
+				as_info("That's what the quest was waiting for; back to the quest with " + my_adventures() + " adventures.");
+				continue;
 			}
 			//out of adventures: fill what's left of stomach, liver and spleen, and carry on if that gave enough
 			if(as_stopReason != "" || !as_bedtimeTopUp())

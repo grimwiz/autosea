@@ -17,6 +17,8 @@ record as_farmZone
 string as_farmGoalOverride = "";
 stat as_farmStat = $stat[none];
 int as_farmUntilLevel = 0;		//stop farming on reaching this level (0: no level stop)
+stat as_farmUntilStat = $stat[none];	//stop farming once this base stat reaches as_farmUntilBase
+int as_farmUntilBase = 0;
 
 // "meat", "stats" or "both" (default)
 string as_farmGoal()
@@ -419,6 +421,10 @@ boolean as_farmMoreTurns(int turns, int startTurns)
 		return false;
 	}
 	if(as_farmUntilLevel > 0 && my_level() >= as_farmUntilLevel)
+	{
+		return false;
+	}
+	if(as_farmUntilStat != $stat[none] && my_basestat(as_farmUntilStat) >= as_farmUntilBase)
 	{
 		return false;
 	}
