@@ -6,7 +6,7 @@ An autoscend-style KoLmafia script for The Sea. Before every adventure it re-rea
 
 ## 11,037 Leagues Under the Sea
 
-Autosea is for the Sea in aftercore. In the 11,037 Leagues Under the Sea challenge path, the Council's quests are different: both Elder Gods, five unblemished pearls, then the Nautical Seaceress. So autosea detects the path and won't run its quest route there. Use [UnderTheSea](https://github.com/tottington/UnderTheSea/tree/lowIOTM) (`git checkout https://github.com/tottington/UnderTheSea lowIOTM`), the Ascension Speed Society's script for the path. `autosea farm` still works in the path.
+Autosea is for the Sea in aftercore. In the 11,037 Leagues Under the Sea challenge path, the Council's quests are different: both Elder Gods, five unblemished pearls, then the Nautical Seaceress. So autosea detects the path and won't run its quest route there. Use [UnderTheSea](https://github.com/tottington/UnderTheSea/tree/lowIOTM) (`git checkout https://github.com/tottington/UnderTheSea lowIOTM`), the Ascension Speed Society's script for the path. `autosea farm` still works in the path, and there it only farms.
 
 ## Install
 
@@ -21,10 +21,10 @@ Update later with `git update`.
 ## Use
 
 ```
-autosea          do the Sea Monkee quest, then farm pearls and meat with the remaining adventures (set autosea_farmAfterQuest = false to stop instead)
+autosea          do the Sea Monkee quest as far as it goes today, then stop (like autoscend)
 autosea 20       the same, for at most 20 turns and one step at a time; no bedtime, so the rest of the day stays
 autosea status   show progress without adventuring
-autosea farm     farm meat and stats in the best safe sea zone (autosea farm 50 for 50 turns)
+autosea farm     the same, then farm pearls, meat and stats in the best safe sea zone with the turns left (autosea farm 50: at most 50 turns in all)
 autosea diet     eat and drink for more adventures, then stop (the other auto scripts call this)
 autosea bedtime  once the day's adventures are spent: a nightcap and rollover gear (the other auto scripts call this)
 ```

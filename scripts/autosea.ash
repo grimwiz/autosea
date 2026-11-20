@@ -7,7 +7,7 @@ since r29000;
 // Usage (KoLmafia command line):
 //   autosea          run until Mom is rescued, adventures run low, or something is missing
 //   autosea status   show progress without adventuring
-//   autosea farm [N] farm meat and stats in the best safe sea zone for N turns (default: all but the reserve)
+//   autosea farm [N] the quest first, then farm meat and stats in the best safe sea zone (at most N turns in all)
 //   autosea diet     eat and drink for more adventures (the other auto scripts call this when they run out)
 
 import <autosea/util.ash>
@@ -143,6 +143,13 @@ void main(string... args)
 		as_turnLimit = my_turncount() + command.to_int();
 		command = "";
 	}
+	//"autosea farm [N]": the quest first, then farm the turns that are left (at most N turns in all). Plain autosea is
+	//like autoscend: finish the quest and stop (user, 2026-11-20)
+	boolean farmAfterQuest = command == "farm";
+	if(farmAfterQuest && count(words) > 1 && words[1].to_int() > 0)
+	{
+		as_turnLimit = my_turncount() + words[1].to_int();
+	}
 	if(my_level() < 11)
 	{
 		as_warn("The Old Man only talks to you from level 11.");
@@ -206,10 +213,9 @@ void main(string... args)
 		while(true)
 		{
 			boolean questAgain = false;		//a farm reached what the quest was waiting for: quest before farming more
-			if(command == "farm")
+			if(command == "farm" && my_path() == $path[11,037 Leagues Under the Sea])
 			{
-				int turns = count(words) > 1 ? words[1].to_int() : -1;	//no number: until adventures run out
-				as_farm(turns);
+				as_farm(-1);	//no quest route in the path: farm only (until adventures or "autosea farm N" run out)
 			}
 			else if(command == "collect")
 			{
@@ -250,12 +256,12 @@ void main(string... args)
 					//no farming on top: the reason stays the last thing in the log, and the turns stay for after
 					as_warn(as_stopReason + " Not farming the remaining " + my_adventures() + " adventures.");
 				}
-				//nothing left to quest for: carry on farming, like autoscend carries on to the next task
+				//the temple boss is done: Dad Sea Monkee is what's left of the quest
 				else if(as_monkeeStep() >= 999 && my_adventures() > as_advReserve())
 				{
 					//Dad Sea Monkee held back only by a base stat (the Clothing of Loathing needs 150 of each): raising
-					//it is the next step of the quest, so farm for it whatever autosea_farmAfterQuest says (user,
-					//2026-11-19: grimwiz stopped at base Muscle 116/150 saying the quest was done)
+					//it is the next step of the quest, so farm for it with or without "farm" (user, 2026-11-19:
+					//grimwiz stopped at base Muscle 116/150 saying the quest was done)
 					string dadNeeds = as_dadBlocked && !as_dadDone() ? as_dadProblem() : "";
 					if(dadNeeds.starts_with("base "))
 					{
@@ -278,18 +284,18 @@ void main(string... args)
 							as_farmStat = $stat[none];
 						}
 					}
-					//anything else holding Dad back: nothing left to quest for today, so farm rather than stop, unless
-					//told not to (user, 2026-11-20: "autosea is NOT to stop unless told otherwise")
-					else if(as_setting("farmAfterQuest", "true").to_boolean())
+					//Dad out of reach for now, or the quest done: stop, like autoscend, unless "autosea farm" was given;
+					//then the turns left after questing go to farming (user, 2026-11-20)
+					else if(farmAfterQuest)
 					{
-						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds + ", and nothing else is left to quest for"
-							: "The Sea Monkee quest is done") + "; farming pearls, meat and stats with the remaining adventures (autosea_farmAfterQuest).");
+						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds : "The Sea Monkee quest is done")
+							+ "; farming pearls, meat and stats with the remaining adventures (autosea farm).");
 						as_farm(-1);
 					}
 					else
 					{
 						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds : "The Sea Monkee quest is done")
-							+ "; stopping with " + my_adventures() + " adventures left (autosea_farmAfterQuest = false).");
+							+ "; stopping with " + my_adventures() + " adventures left (\"autosea farm\" farms them after the quest).");
 					}
 				}
 			}
