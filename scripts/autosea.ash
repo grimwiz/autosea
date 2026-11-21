@@ -288,13 +288,15 @@ void main(string... args)
 					//then the turns left after questing go to farming (user, 2026-11-20)
 					else if(farmAfterQuest)
 					{
-						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds : "The Sea Monkee quest is done")
+						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds
+							: as_dadBlocked && !as_dadDone() ? "Dad Sea Monkee isn't ready (the reason is above)" : "The Sea Monkee quest is done")
 							+ "; farming pearls, meat and stats with the remaining adventures (autosea farm).");
 						as_farm(-1);
 					}
 					else
 					{
-						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds : "The Sea Monkee quest is done")
+						as_info((dadNeeds != "" ? "Dad Sea Monkee is next but needs " + dadNeeds
+							: as_dadBlocked && !as_dadDone() ? "Dad Sea Monkee isn't ready (the reason is above)" : "The Sea Monkee quest is done")
 							+ "; stopping with " + my_adventures() + " adventures left (\"autosea farm\" farms them after the quest).");
 					}
 				}

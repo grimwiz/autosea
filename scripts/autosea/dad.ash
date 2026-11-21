@@ -146,7 +146,9 @@ string as_dadGear()
 		{
 			continue;
 		}
-		if(!as_fetch(1, it))
+		//worn counts: as_fetch only looks in the inventory (grimwiz, 2026-11-21: the Treads of Loathing were still on
+		//as rollover gear, and Dad was skipped for want of them)
+		if(!have_equipped(it) && !as_fetch(1, it))
 		{
 			return "";
 		}
@@ -162,7 +164,7 @@ string as_dadGear()
 	}
 	foreach it in $items[makeshift SCUBA gear, old SCUBA tank]
 	{
-		if(as_fetch(1, it))
+		if(have_equipped(it) || as_fetch(1, it))
 		{
 			return pieces + ", +equip " + it;
 		}
